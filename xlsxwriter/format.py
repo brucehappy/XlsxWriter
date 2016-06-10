@@ -33,7 +33,9 @@ class Format(xmlwriter.XMLwriter):
         self.xf_format_indices = xf_indices
         self.dxf_format_indices = dxf_indices
         self.xf_index = None
+        self.xf_index_ref = None
         self.dxf_index = None
+        self.dxf_index_ref = None
 
         self.num_format = 0
         self.num_format_index = 0
@@ -658,9 +660,17 @@ class Format(xmlwriter.XMLwriter):
         # Set the xf_index property.
         self.xf_index = xf_index
 
+    def set_xf_index_ref(self, xf_index_ref):
+        # Set the xf_index_ref property.
+        self.xf_index_ref = xf_index_ref
+
     def set_dxf_index(self, dxf_index):
-        # Set the xf_index property.
+        # Set the dxf_index property.
         self.dxf_index = dxf_index
+
+    def set_dxf_index_ref(self, dxf_index_ref):
+        # Set the dxf_index_ref property.
+        self.dxf_index_ref = dxf_index_ref
 
     def set_num_format_index(self, num_format_index):
         # Set the num_format_index property.
@@ -915,13 +925,17 @@ class Format(xmlwriter.XMLwriter):
         if self.xf_index is not None:
             # Format already has an index number so return it.
             return self.xf_index
+        elif self.xf_index_ref is not None:
+            # Format already matches existing format with an index number so return it.
+            return self.xf_index_ref
         else:
             # Format doesn't have an index number so assign one.
             key = self._get_format_key()
 
             if key in self.xf_format_indices:
                 # Format matches existing format with an index.
-                return self.xf_format_indices[key]
+                self.xf_index_ref = self.xf_format_indices[key]
+                return self.xf_index_ref
             else:
                 # New format requiring an index. Note. +1 since Excel
                 # has an implicit "General" format at index 0.
@@ -935,13 +949,17 @@ class Format(xmlwriter.XMLwriter):
         if self.dxf_index is not None:
             # Format already has an index number so return it.
             return self.dxf_index
+        elif self.dxf_index_ref is not None:
+            # Format already matches existing format with an index number so return it.
+            return self.dxf_index_ref
         else:
             # Format doesn't have an index number so assign one.
             key = self._get_format_key()
 
             if key in self.dxf_format_indices:
                 # Format matches existing format with an index.
-                return self.dxf_format_indices[key]
+                self.dxf_index_ref = self.dxf_format_indices[key]
+                return self.dxf_index_ref
             else:
                 # New format requiring an index.
                 index = len(self.dxf_format_indices)
