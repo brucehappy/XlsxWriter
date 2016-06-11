@@ -27,10 +27,15 @@ class TestCompareXLSXFiles(ExcelComparisonTest):
         self.ignore_files = []
         self.ignore_elements = {}
 
-    def test_create_file(self):
+    def _test_create_file(self, extra_options={}):
         """Test the creation of a simple XlsxWriter file."""
 
-        workbook = Workbook(self.got_filename, {'constant_memory': True, 'in_memory': False})
+        options = {
+            'constant_memory': True,
+            'in_memory': False
+        }
+        options.update(extra_options)
+        workbook = Workbook(self.got_filename, options)
         worksheet = workbook.add_worksheet()
 
         bold = workbook.add_format({'bold': 1})
@@ -89,3 +94,10 @@ class TestCompareXLSXFiles(ExcelComparisonTest):
         workbook.close()
 
         self.assertExcelEqual()
+
+    def test_create_file(self):
+        self._test_create_file()
+
+    def test_create_file_with_buffer(self):
+        # This tests writing rows out at A5, A8, and on close
+        self._test_create_file({'constant_memory_row_buffer': 3})

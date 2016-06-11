@@ -167,6 +167,7 @@ class Worksheet(xmlwriter.XMLwriter):
         self.str_table = None
         self.palette = None
         self.optimization = 0
+        self.optimization_row_buffer = 0
         self.tmpdir = None
         self.is_chartsheet = False
 
@@ -471,9 +472,9 @@ class Worksheet(xmlwriter.XMLwriter):
         else:
             string_index = string
 
-        # Write previous row if in in-line string optimization mode.
+        # Write previous rows if in in-line string optimization mode.
         if self.optimization and row > self.previous_row:
-            self._write_single_row(row)
+            self._write_optimization_rows(row)
 
         # Store the cell data in the worksheet data table.
         self.table[row][col] = cell_string_tuple(string_index, cell_format)
@@ -513,9 +514,9 @@ class Worksheet(xmlwriter.XMLwriter):
         if self._check_dimensions(row, col):
             return -1
 
-        # Write previous row if in in-line string optimization mode.
+        # Write previous rows if in in-line string optimization mode.
         if self.optimization and row > self.previous_row:
-            self._write_single_row(row)
+            self._write_optimization_rows(row)
 
         # Store the cell data in the worksheet data table.
         self.table[row][col] = cell_number_tuple(number, cell_format)
@@ -547,9 +548,9 @@ class Worksheet(xmlwriter.XMLwriter):
         if self._check_dimensions(row, col):
             return -1
 
-        # Write previous row if in in-line string optimization mode.
+        # Write previous rows if in in-line string optimization mode.
         if self.optimization and row > self.previous_row:
-            self._write_single_row(row)
+            self._write_optimization_rows(row)
 
         # Store the cell data in the worksheet data table.
         self.table[row][col] = cell_blank_tuple(cell_format)
@@ -586,9 +587,9 @@ class Worksheet(xmlwriter.XMLwriter):
         if formula.startswith('='):
             formula = formula.lstrip('=')
 
-        # Write previous row if in in-line string optimization mode.
+        # Write previous rows if in in-line string optimization mode.
         if self.optimization and row > self.previous_row:
-            self._write_single_row(row)
+            self._write_optimization_rows(row)
 
         # Store the cell data in the worksheet data table.
         self.table[row][col] = cell_formula_tuple(formula, cell_format, value)
@@ -641,9 +642,9 @@ class Worksheet(xmlwriter.XMLwriter):
         if formula[-1] == '}':
             formula = formula[:-1]
 
-        # Write previous row if in in-line string optimization mode.
+        # Write previous rows if in in-line string optimization mode.
         if self.optimization and first_row > self.previous_row:
-            self._write_single_row(first_row)
+            self._write_optimization_rows(first_row)
 
         # Store the cell data in the worksheet data table.
         self.table[first_row][first_col] = cell_arformula_tuple(formula,
@@ -680,9 +681,9 @@ class Worksheet(xmlwriter.XMLwriter):
         if self._check_dimensions(row, col):
             return -1
 
-        # Write previous row if in in-line string optimization mode.
+        # Write previous rows if in in-line string optimization mode.
         if self.optimization and row > self.previous_row:
-            self._write_single_row(row)
+            self._write_optimization_rows(row)
 
         # Convert datetime to an Excel date.
         number = self._convert_date_time(date)
@@ -716,9 +717,9 @@ class Worksheet(xmlwriter.XMLwriter):
         if self._check_dimensions(row, col):
             return -1
 
-        # Write previous row if in in-line string optimization mode.
+        # Write previous rows if in in-line string optimization mode.
         if self.optimization and row > self.previous_row:
-            self._write_single_row(row)
+            self._write_optimization_rows(row)
 
         if boolean:
             value = 1
@@ -837,9 +838,9 @@ class Worksheet(xmlwriter.XMLwriter):
                  "65,530 URLS per worksheet." % force_unicode(url))
             return -5
 
-        # Write previous row if in in-line string optimization mode.
+        # Write previous rows if in in-line string optimization mode.
         if self.optimization == 1 and row > self.previous_row:
-            self._write_single_row(row)
+            self._write_optimization_rows(row)
 
         # Add the default URL format.
         if cell_format is None:
@@ -962,9 +963,9 @@ class Worksheet(xmlwriter.XMLwriter):
         else:
             string_index = string
 
-        # Write previous row if in in-line string optimization mode.
+        # Write previous rows if in in-line string optimization mode.
         if self.optimization and row > self.previous_row:
-            self._write_single_row(row)
+            self._write_optimization_rows(row)
 
         # Store the cell data in the worksheet data table.
         self.table[row][col] = cell_string_tuple(string_index, cell_format)
@@ -3351,6 +3352,7 @@ class Worksheet(xmlwriter.XMLwriter):
         self.str_table = init_data['str_table']
         self.worksheet_meta = init_data['worksheet_meta']
         self.optimization = init_data['optimization']
+        self.optimization_row_buffer = init_data['optimization_row_buffer']
         self.tmpdir = init_data['tmpdir']
         self.date_1904 = init_data['date_1904']
         self.strings_to_numbers = init_data['strings_to_numbers']
@@ -5013,40 +5015,59 @@ class Worksheet(xmlwriter.XMLwriter):
                     self._write_empty_row(row_num, span,
                                           self.set_rows[row_num])
 
-    def _write_single_row(self, current_row_num=0):
-        # Write out the worksheet data as a single row with cells.
-        # This method is used when memory optimization is on. A single
-        # row is written and the data table is reset. That way only
-        # one row of data is kept in memory at any one time. We don't
-        # write span data in the optimized case since it is optional.
+    def _write_optimization_rows(self, current_row_num):
+        # current_row_num is always >= self.previous_row
+        if (current_row_num-self.previous_row) < self.optimization_row_buffer:
+            # Write the row buffer only after it has been filled
+            return
+
+        self._write_optimization_row_buffer(current_row_num)
+
+    def _write_remaining_optimization_rows(self):
+        # Used by the packager to write any rows left in the buffer
+        if len(self.table) > 0:
+            self._write_optimization_row_buffer(sorted(self.table.keys())[-1]+1)
+
+    def _write_optimization_row_buffer(self, current_row_num):
+        # Write out the worksheet data as a batch of one or more rows
+        # with cells. This method is used when memory optimization is
+        # on. All rows in the data table are written and then the data
+        # table is reset. That way, only at most the number of rows
+        # specified by the optimization_row_buffer property are kept
+        # in memory at any one time. This property defaults to 1,
+        # meaning we only hold a single row in memory before writing
+        # it out. We don't write span data in the optimized case since
+        # it is optional.
+
+        for row_num in range(self.previous_row, current_row_num):
+            if (row_num in self.set_rows or row_num in self.comments
+                    or self.table[row_num]):
+                # Only process rows with formatting, cell data and/or comments.
+
+                # No span data in optimized mode.
+                span = None
+
+                if self.table[row_num]:
+                    # Write the cells if the row contains data.
+                    if row_num not in self.set_rows:
+                        self._write_row(row_num, span)
+                    else:
+                        self._write_row(row_num, span, self.set_rows[row_num])
+
+                    for col_num in sorted(self.table[row_num].keys()):
+                        # The dim_colmax-dim_colmin could be very large, so
+                        # iterate over the columns that have actually been set
+                        if self.dim_colmin <= col_num <= (self.dim_colmax + 1):
+                            col_ref = self.table[row_num][col_num]
+                            self._write_cell(row_num, col_num, col_ref)
+
+                    self._xml_end_tag('row')
+                else:
+                    # Row attributes or comments only.
+                    self._write_empty_row(row_num, span, self.set_rows[row_num])
 
         # Set the new previous row as the current row.
-        row_num = self.previous_row
         self.previous_row = current_row_num
-
-        if (row_num in self.set_rows or row_num in self.comments
-                or self.table[row_num]):
-            # Only process rows with formatting, cell data and/or comments.
-
-            # No span data in optimized mode.
-            span = None
-
-            if self.table[row_num]:
-                # Write the cells if the row contains data.
-                if row_num not in self.set_rows:
-                    self._write_row(row_num, span)
-                else:
-                    self._write_row(row_num, span, self.set_rows[row_num])
-
-                for col_num in range(self.dim_colmin, self.dim_colmax + 1):
-                    if col_num in self.table[row_num]:
-                        col_ref = self.table[row_num][col_num]
-                        self._write_cell(row_num, col_num, col_ref)
-
-                self._xml_end_tag('row')
-            else:
-                # Row attributes or comments only.
-                self._write_empty_row(row_num, span, self.set_rows[row_num])
 
         # Reset table.
         self.table.clear()

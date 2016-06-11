@@ -182,7 +182,7 @@ class Packager(object):
 
             if worksheet.optimization == 1:
                 worksheet._opt_reopen()
-                worksheet._write_single_row()
+                worksheet._write_remaining_optimization_rows()
 
             worksheet._set_xml_writer(self._filename('xl/worksheets/sheet'
                                                      + str(index) + '.xml'))
