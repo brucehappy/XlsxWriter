@@ -281,11 +281,11 @@ class Worksheet(xmlwriter.XMLwriter):
 
         self.autofilter_area = ''
         self.autofilter_ref = None
-        self.filter_range = []
         self.filter_on = 0
         self.filter_range = []
         self.filter_cols = {}
         self.filter_type = {}
+        self.filter_button_disabled = set()
 
         self.col_sizes = {}
         self.row_sizes = {}
@@ -1594,6 +1594,49 @@ class Worksheet(xmlwriter.XMLwriter):
         self.filter_cols[col] = filters
         self.filter_type[col] = 1
         self.filter_on = 1
+
+    def filter_column_button_enabled(self, col, enabled=True):
+        """
+        Enable or disable the column filter button. All column
+        filter buttons default to enabled.
+
+        Args:
+            col:       Filter column (zero-indexed).
+            enabled:   Whether to enable or disable the column filter button.
+
+        Returns:
+             Nothing.
+
+        """
+        if not self.autofilter_area:
+            warn("Must call autofilter() before filter_column_button_enabled()")
+            return
+
+        # Check for a column reference in A1 notation and substitute.
+        try:
+            int(col)
+        except ValueError:
+            # Convert col ref to a cell ref and then to a col number.
+            col_letter = col
+            (_, col) = xl_cell_to_rowcol(col + '1')
+
+            if col >= self.xls_colmax:
+                warn("Invalid column '%s'" % col_letter)
+                return
+
+        (col_first, col_last) = self.filter_range
+
+        # Reject column if it is outside filter range.
+        if col < col_first or col > col_last:
+            warn("Column '%d' outside autofilter() column range (%d, %d)"
+                 % (col, col_first, col_last))
+            return
+
+        # Only keep track of buttons that are disabled
+        if enabled:
+            self.filter_button_disabled.discard(col)
+        else:
+            self.filter_button_disabled.add(col)
 
     @convert_range_args
     def data_validation(self, first_row, first_col, last_row, last_col,
@@ -5531,8 +5574,8 @@ class Worksheet(xmlwriter.XMLwriter):
 
         attributes = [('ref', self.autofilter_ref)]
 
-        if self.filter_on:
-            # Autofilter defined active filters.
+        if self.filter_on or len(self.filter_button_disabled) > 0:
+            # Autofilter defined active filters or disabled buttons.
             self._xml_start_tag('autoFilter', attributes)
             self._write_autofilters()
             self._xml_end_tag('autoFilter')
@@ -5547,31 +5590,38 @@ class Worksheet(xmlwriter.XMLwriter):
         (col1, col2) = self.filter_range
 
         for col in range(col1, col2 + 1):
-            # Skip if column doesn't have an active filter.
-            if col not in self.filter_cols:
+            # Retrieve the filter tokens and write the autofilter records.
+            tokens = self.filter_cols.get(col, None)
+            filter_type = self.filter_type.get(col, None)
+            button_disabled = col in self.filter_button_disabled
+
+            # Skip if column doesn't have an active filter or disabled button.
+            if tokens is None and not button_disabled:
                 continue
 
-            # Retrieve the filter tokens and write the autofilter records.
-            tokens = self.filter_cols[col]
-            filter_type = self.filter_type[col]
-
             # Filters are relative to first column in the autofilter.
-            self._write_filter_column(col - col1, filter_type, tokens)
+            self._write_filter_column(col - col1, filter_type, tokens, button_disabled)
 
-    def _write_filter_column(self, col_id, filter_type, filters):
+    def _write_filter_column(self, col_id, filter_type, filters, button_disabled=False):
         # Write the <filterColumn> element.
         attributes = [('colId', col_id)]
 
-        self._xml_start_tag('filterColumn', attributes)
+        if button_disabled:
+            attributes.append(('showButton', 0))
 
-        if filter_type == 1:
-            # Type == 1 is the new XLSX style filter.
-            self._write_filters(filters)
+        if filters is None:
+            self._xml_empty_tag('filterColumn', attributes)
         else:
-            # Type == 0 is the classic "custom" filter.
-            self._write_custom_filters(filters)
+            self._xml_start_tag('filterColumn', attributes)
 
-        self._xml_end_tag('filterColumn')
+            if filter_type == 1:
+                # Type == 1 is the new XLSX style filter.
+                self._write_filters(filters)
+            else:
+                # Type == 0 is the classic "custom" filter.
+                self._write_custom_filters(filters)
+
+            self._xml_end_tag('filterColumn')
 
     def _write_filters(self, filters):
         # Write the <filters> element.

@@ -292,3 +292,41 @@ class TestWriteAutoFilter(unittest.TestCase):
         got = self.fh.getvalue()
 
         self.assertEqual(got, exp)
+
+    def test_write_auto_filter_22(self):
+        """Test the _write_auto_filter() method"""
+
+        exp = """<autoFilter ref="A1:D51"><filterColumn colId="1" showButton="0"/></autoFilter>"""
+
+        self.worksheet.filter_column_button_enabled('B', False)
+        self.worksheet._write_auto_filter()
+
+        got = self.fh.getvalue()
+
+        self.assertEqual(got, exp)
+
+    def test_write_auto_filter_23(self):
+        """Test the _write_auto_filter() method"""
+
+        exp = """<autoFilter ref="A1:D51"/>"""
+
+        self.worksheet.filter_column_button_enabled(0, True)
+        self.worksheet._write_auto_filter()
+
+        got = self.fh.getvalue()
+
+        self.assertEqual(got, exp)
+
+    def test_write_auto_filter_24(self):
+        """Test the _write_auto_filter() method"""
+
+        filter_condition = 'x == East'
+        exp = """<autoFilter ref="A1:D51"><filterColumn colId="0" showButton="0"><filters><filter val="East"/></filters></filterColumn></autoFilter>"""
+
+        self.worksheet.filter_column(0, filter_condition)
+        self.worksheet.filter_column_button_enabled(0, False)
+        self.worksheet._write_auto_filter()
+
+        got = self.fh.getvalue()
+
+        self.assertEqual(got, exp)
