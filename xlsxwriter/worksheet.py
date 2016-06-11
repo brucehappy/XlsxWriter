@@ -285,7 +285,7 @@ class Worksheet(xmlwriter.XMLwriter):
         self.filter_range = []
         self.filter_cols = {}
         self.filter_type = {}
-        self.filter_button_disabled = {}
+        self.filter_button_disabled = set()
 
         self.col_sizes = {}
         self.row_sizes = {}
@@ -1634,9 +1634,9 @@ class Worksheet(xmlwriter.XMLwriter):
 
         # Only keep track of buttons that are disabled
         if enabled:
-            self.filter_button_disabled.pop(col, None)
+            self.filter_button_disabled.discard(col)
         else:
-            self.filter_button_disabled[col] = True
+            self.filter_button_disabled.add(col)
 
     @convert_range_args
     def data_validation(self, first_row, first_col, last_row, last_col,
@@ -5593,7 +5593,7 @@ class Worksheet(xmlwriter.XMLwriter):
             # Retrieve the filter tokens and write the autofilter records.
             tokens = self.filter_cols.get(col, None)
             filter_type = self.filter_type.get(col, None)
-            button_disabled = self.filter_button_disabled.get(col, False)
+            button_disabled = col in self.filter_button_disabled
 
             # Skip if column doesn't have an active filter or disabled button.
             if tokens is None and not button_disabled:
