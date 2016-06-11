@@ -28,10 +28,10 @@ class PyTest(Command):
 
 setup(
     name='XlsxWriter',
-    version='0.9.1',
+    version='0.9.1_Tervela',
     author='John McNamara',
     author_email='jmcnamara@cpan.org',
-    url='https://github.com/jmcnamara/XlsxWriter',
+    url='https://github.com/brucehappy/XlsxWriter',
     packages=['xlsxwriter'],
     scripts=['examples/vba_extract.py'],
     cmdclass={'test': PyTest},
