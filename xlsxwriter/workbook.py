@@ -156,31 +156,33 @@ class Workbook(xmlwriter.XMLwriter):
         """Close workbook when exiting "with" statement."""
         self.close()
 
-    def add_worksheet(self, name=None):
+    def add_worksheet(self, name=None, options=None):
         """
         Add a new worksheet to the Excel workbook.
 
         Args:
-            name: The worksheet name. Defaults to 'Sheet1', etc.
+            name:    The worksheet name. Defaults to 'Sheet1', etc.
+            options: The worksheet options. Defaults to None.
 
         Returns:
             Reference to a worksheet object.
 
         """
-        return self._add_sheet(name, is_chartsheet=False)
+        return self._add_sheet(name, is_chartsheet=False, extra_init_data=options)
 
-    def add_chartsheet(self, name=None):
+    def add_chartsheet(self, name=None, options=None):
         """
         Add a new chartsheet to the Excel workbook.
 
         Args:
-            name: The chartsheet name. Defaults to 'Sheet1', etc.
+            name:    The chartsheet name. Defaults to 'Sheet1', etc.
+            options: The worksheet options. Defaults to None.
 
         Returns:
             Reference to a chartsheet object.
 
         """
-        return self._add_sheet(name, is_chartsheet=True)
+        return self._add_sheet(name, is_chartsheet=True, extra_init_data=options)
 
     def add_format(self, properties={}):
         """
@@ -603,7 +605,7 @@ class Workbook(xmlwriter.XMLwriter):
 
         xlsx_file.close()
 
-    def _add_sheet(self, name, is_chartsheet):
+    def _add_sheet(self, name, is_chartsheet, extra_init_data=None):
         # Utility for shared code in add_worksheet() and add_chartsheet().
 
         sheet_index = len(self.worksheets_objs)
@@ -626,6 +628,8 @@ class Workbook(xmlwriter.XMLwriter):
             'default_url_format': self.default_url_format,
             'excel2003_style': self.excel2003_style,
         }
+        if extra_init_data is not None:
+            init_data.update(extra_init_data)
 
         if is_chartsheet:
             worksheet = Chartsheet()

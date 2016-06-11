@@ -167,6 +167,7 @@ class Worksheet(xmlwriter.XMLwriter):
         self.str_table = None
         self.palette = None
         self.optimization = 0
+        self.shared_string_cols = set()
         self.tmpdir = None
         self.is_chartsheet = False
 
@@ -466,7 +467,7 @@ class Worksheet(xmlwriter.XMLwriter):
             str_error = -2
 
         # Write a shared string or an in-line string in optimization mode.
-        if self.optimization == 0:
+        if self._shared_string_enabled(col):
             string_index = self.str_table._get_shared_string_index(string)
         else:
             string_index = string
@@ -957,7 +958,7 @@ class Worksheet(xmlwriter.XMLwriter):
             return -2
 
         # Write a shared string or an in-line string in optimization mode.
-        if self.optimization == 0:
+        if self._shared_string_enabled(col):
             string_index = self.str_table._get_shared_string_index(string)
         else:
             string_index = string
@@ -3351,6 +3352,7 @@ class Worksheet(xmlwriter.XMLwriter):
         self.str_table = init_data['str_table']
         self.worksheet_meta = init_data['worksheet_meta']
         self.optimization = init_data['optimization']
+        self.shared_string_cols = self._get_shared_string_cols(init_data.get('constant_memory_shared_string_cols', []))
         self.tmpdir = init_data['tmpdir']
         self.date_1904 = init_data['date_1904']
         self.strings_to_numbers = init_data['strings_to_numbers']
@@ -3721,6 +3723,49 @@ class Worksheet(xmlwriter.XMLwriter):
             operator = 22
 
         return [operator, token]
+
+    def _get_shared_string_cols(self, obj):
+        # Accept the following formats:
+        # single column: 0 or 'A'
+        # multiple columns: [0,3,4] or ['A','D','E']
+        # a range of columns: 'A:C'
+        # a range and single columns: 'A:C,E,G'
+        if isinstance(obj, list):
+            col_list = obj
+        elif isinstance(obj, str_types):
+            col_list = obj.split(',')
+        elif isinstance(obj, num_types):
+            col_list = [obj]
+        else:
+            return
+        result = set()
+        for cur_col in col_list:
+            try:
+                result.add(int(cur_col))
+            except ValueError:
+                def _get_col(col_letter):
+                    # Convert col ref to a cell ref and then to a col number.
+                    (_, col) = xl_cell_to_rowcol(col_letter + '1')
+
+                    if col >= self.xls_colmax:
+                        warn("Invalid column '%s'" % col_letter)
+                        return None
+                    return col
+                if ':' in cur_col:
+                    col_range = cur_col.split(':')
+                    if len(col_range) == 2:
+                        col1 = _get_col(col_range[0])
+                        col2 = _get_col(col_range[1])
+                        if col1 is not None and col2 is not None:
+                            result.update(range(min(col1, col2), max(col1, col2)+1))
+                else:
+                    col = _get_col(cur_col)
+                    if col is not None:
+                        result.add(col)
+        return result
+
+    def _shared_string_enabled(self, col):
+        return self.optimization == 0 or col in self.shared_string_cols
 
     def _encode_password(self, plaintext):
         # Encode the worksheet protection "password" as a simple hash.
@@ -5188,7 +5233,7 @@ class Worksheet(xmlwriter.XMLwriter):
             # Write a string.
             string = cell.string
 
-            if not self.optimization:
+            if self._shared_string_enabled(col):
                 # Write a shared string.
                 self._xml_string_element(string, attributes)
             else:
