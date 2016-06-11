@@ -67,6 +67,7 @@ class Workbook(xmlwriter.XMLwriter):
         self.nan_inf_to_errors = options.get('nan_inf_to_errors', False)
         self.default_date_format = options.get('default_date_format', None)
         self.optimization = options.get('constant_memory', False)
+        self.optimization_row_buffer = options.get('constant_memory_row_buffer', 1)
         self.in_memory = options.get('in_memory', False)
         self.excel2003_style = options.get('excel2003_style', False)
         self.default_format_properties = \
@@ -616,6 +617,7 @@ class Workbook(xmlwriter.XMLwriter):
             'str_table': self.str_table,
             'worksheet_meta': self.worksheet_meta,
             'optimization': self.optimization,
+            'optimization_row_buffer': self.optimization_row_buffer,
             'tmpdir': self.tmpdir,
             'date_1904': self.date_1904,
             'strings_to_numbers': self.strings_to_numbers,
