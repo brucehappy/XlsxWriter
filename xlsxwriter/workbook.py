@@ -619,7 +619,7 @@ class Workbook(xmlwriter.XMLwriter):
             'str_table': self.str_table,
             'worksheet_meta': self.worksheet_meta,
             'optimization': self.optimization,
-            'optimization_row_buffer': self.optimization_row_buffer,
+            'constant_memory_row_buffer': self.optimization_row_buffer,
             'tmpdir': self.tmpdir,
             'date_1904': self.date_1904,
             'strings_to_numbers': self.strings_to_numbers,

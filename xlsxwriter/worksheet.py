@@ -3396,7 +3396,7 @@ class Worksheet(xmlwriter.XMLwriter):
         self.str_table = init_data['str_table']
         self.worksheet_meta = init_data['worksheet_meta']
         self.optimization = init_data['optimization']
-        self.optimization_row_buffer = init_data['optimization_row_buffer']
+        self.optimization_row_buffer = init_data['constant_memory_row_buffer']
         self.shared_string_cols = self._get_shared_string_cols(init_data.get('constant_memory_shared_string_cols', []))
         self.tmpdir = init_data['tmpdir']
         self.date_1904 = init_data['date_1904']
