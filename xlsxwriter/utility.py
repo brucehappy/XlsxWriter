@@ -10,6 +10,29 @@ from warnings import warn
 
 COL_NAMES = {}
 range_parts = re.compile(r'(\$?)([A-Z]{1,3})(\$?)(\d+)')
+escape_escape = re.compile('(_x[0-9a-fA-F]{4}_)')
+# Include all characters which are not in the valid ranges for XML 1.0
+escape_control = re.compile(u'([^\u0009\u000A\u000D\u0020-\u007E\u0085\u00A0-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF])')
+
+
+def escape_string(str):
+    """
+    Excel escapes control characters with _xHHHH_ and also escapes any
+    literal strings of that type by encoding the leading underscore.
+    So "\0" -> _x0000_ and "_x0000_" -> _x005F_x0000_.
+    The following substitutions deal with those cases.
+
+    Args:
+       str: The string
+
+    Returns:
+       The escaped string
+
+    """
+    str = re.sub(escape_escape, r'_x005F\1', str)
+    return re.sub(escape_control,
+                  lambda match: "_x%04X_" %
+                  ord(match.group(1)), str)
 
 
 def xl_rowcol_to_cell(row, col, row_abs=False, col_abs=False):

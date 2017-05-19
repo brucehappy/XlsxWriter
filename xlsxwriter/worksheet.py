@@ -26,6 +26,7 @@ from .format import Format
 from .drawing import Drawing
 from .shape import Shape
 from .xmlwriter import XMLwriter
+from .utility import escape_string
 from .utility import xl_rowcol_to_cell
 from .utility import xl_rowcol_to_cell_fast
 from .utility import xl_cell_to_rowcol
@@ -5303,11 +5304,8 @@ class Worksheet(xmlwriter.XMLwriter):
             else:
                 # Write an optimized in-line string.
 
-                # Escape control characters. See SharedString.pm for details.
-                string = re.sub('(_x[0-9a-fA-F]{4}_)', r'_x005F\1', string)
-                string = re.sub(r'([\x00-\x08\x0B-\x1F])',
-                                lambda match: "_x%04X_" %
-                                ord(match.group(1)), string)
+                # Escape the string
+                string = escape_string(string)
 
                 # Write any rich strings without further tags.
                 if re.search('^<r>', string) and re.search('</r>$', string):
