@@ -3,11 +3,10 @@
 # An example of converting a Pandas dataframe to an xlsx file with a grouped
 # column chart using Pandas and XlsxWriter.
 #
-# Copyright 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 import pandas as pd
-from vincent.colors import brews
 
 # Some sample data to plot.
 farm_1 = {'Apples': 10, 'Berries': 32, 'Squash': 21, 'Melons': 13, 'Corn': 18}

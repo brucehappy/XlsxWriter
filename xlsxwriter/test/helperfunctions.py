@@ -2,7 +2,7 @@
 #
 # Helper functions for testing XlsxWriter.
 #
-# Copyright (c), 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright (c), 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 import re
@@ -109,25 +109,20 @@ def _compare_xlsx_files(got_file, exp_file, ignore_files, ignore_elements):
     try:
         # Open the XlsxWriter as a zip file for testing.
         got_zip = ZipFile(got_file, 'r')
-    except IOError:
-        # For Python 2.5+ compatibility.
-        e = sys.exc_info()[1]
+    except IOError as e:
         error = "XlsxWriter file error: " + str(e)
         return error, ''
-    except (BadZipfile, LargeZipFile):
-        e = sys.exc_info()[1]
+    except (BadZipfile, LargeZipFile) as e:
         error = "XlsxWriter zipfile error, '" + exp_file + "': " + str(e)
         return error, ''
 
     try:
         # Open the Excel as a zip file for testing.
         exp_zip = ZipFile(exp_file, 'r')
-    except IOError:
-        e = sys.exc_info()[1]
+    except IOError as e:
         error = "Excel file error: " + str(e)
         return error, ''
-    except (BadZipfile, LargeZipFile):
-        e = sys.exc_info()[1]
+    except (BadZipfile, LargeZipFile) as e:
         error = "Excel zipfile error, '" + exp_file + "': " + str(e)
         return error, ''
 
@@ -150,7 +145,7 @@ def _compare_xlsx_files(got_file, exp_file, ignore_files, ignore_elements):
 
         # Compare binary files with string comparison based on extension.
         extension = os.path.splitext(filename)[1]
-        if extension in ('.png', '.jpeg', '.bmp', '.bin'):
+        if extension in ('.png', '.jpeg', '.bmp', '.wmf', '.emf', '.bin'):
             if got_xml_str != exp_xml_str:
                 return 'got: %s' % filename, 'exp: %s' % filename
             continue
@@ -222,3 +217,18 @@ def _compare_xlsx_files(got_file, exp_file, ignore_files, ignore_elements):
 
     # If we got here the files are the same.
     return 'Ok', 'Ok'
+
+
+# External wrapper function to allow simplified equality testing of two Excel
+# files. Note, this function doesn't test equivalence, only equality.
+def compare_xlsx_files(file1, file2, ignore_files=None, ignore_elements=None):
+
+    if ignore_elements is None:
+        ignore_elements = []
+
+    if ignore_elements is None:
+        ignore_elements = []
+
+    got, exp = _compare_xlsx_files(file1, file2, ignore_files, ignore_elements)
+
+    return got == exp

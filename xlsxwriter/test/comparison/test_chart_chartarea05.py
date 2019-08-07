@@ -2,7 +2,7 @@
 #
 # Tests for XlsxWriter.
 #
-# Copyright (c), 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright (c), 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 from ..excel_comparsion_test import ExcelComparisonTest
@@ -16,16 +16,8 @@ class TestCompareXLSXFiles(ExcelComparisonTest):
     """
 
     def setUp(self):
-        self.maxDiff = None
 
-        filename = 'chart_chartarea05.xlsx'
-
-        test_dir = 'xlsxwriter/test/comparison/'
-        self.got_filename = test_dir + '_test_' + filename
-        self.exp_filename = test_dir + 'xlsx_files/' + filename
-
-        self.ignore_files = []
-        self.ignore_elements = {}
+        self.set_filename('chart_chartarea05.xlsx')
 
     def test_create_file(self):
         """Test XlsxWriter chartarea properties."""
@@ -54,8 +46,8 @@ class TestCompareXLSXFiles(ExcelComparisonTest):
         })
 
         chart.set_plotarea({
-            'border': {'dash_type': 'dash_dot'},
-            'fill': {'color': '#FFC000'}
+            'border': {'dash_type': 'square_dot'},
+            'fill': {'color': '#FF0000'}
         })
 
         worksheet.insert_chart('E9', chart)

@@ -42,14 +42,14 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'XlsxWriter'
-copyright = u'2013-2016, John McNamara'
+copyright = u'2013-2019, John McNamara'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = '0.9.1'
+version = '1.1.8'
 # The full version, including alpha/beta/rc tags.
 release = version
 
@@ -88,7 +88,7 @@ pygments_style = 'sphinx'
 # modindex_common_prefix = []
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/2/': None}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 
 # -- Options for HTML output ---------------------------------------------------
@@ -99,6 +99,8 @@ intersphinx_mapping = {'http://docs.python.org/2/': None}
 sys.path.append(os.path.abspath('_themes'))
 html_theme_path = ['_themes']
 html_theme = 'bootstrap'
+
+html_theme_options = {'nosidebar': True}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -268,7 +270,7 @@ texinfo_documents = [
 epub_title = u'XlsxWriter'
 epub_author = u'John McNamara'
 epub_publisher = u'John McNamara'
-epub_copyright = u'2013-2016, John McNamara'
+epub_copyright = u'2013-2019, John McNamara'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.
@@ -304,3 +306,8 @@ epub_copyright = u'2013-2016, John McNamara'
 # Allow duplicate toc entries.
 # epub_tocdup = True
 
+# Skip these domains in the linkcheck since they always end up as redirects.
+linkcheck_ignore = [r'.*microsoft.com.*', 
+                    r'.*office.com.*', 
+                    r'.*www.paypal.com.*',
+                    r'https://twitter.com/jmcnamara13']

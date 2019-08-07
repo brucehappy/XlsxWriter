@@ -2,38 +2,43 @@
 #
 # Workbook - A class for writing the Excel XLSX Workbook file.
 #
-# Copyright 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 # Standard packages.
-import sys
 import re
 import os
 import operator
+import time
 from warnings import warn
 from datetime import datetime
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 from struct import unpack
 
 from .compatibility import int_types, num_types, str_types, force_unicode
 
 # Package imports.
 from . import xmlwriter
-from xlsxwriter.worksheet import Worksheet
-from xlsxwriter.chartsheet import Chartsheet
-from xlsxwriter.sharedstrings import SharedStringTable
-from xlsxwriter.format import Format
-from xlsxwriter.packager import Packager
+from .worksheet import Worksheet
+from .chartsheet import Chartsheet
+from .sharedstrings import SharedStringTable
+from .format import Format
+from .packager import Packager
 from .utility import xl_cell_to_rowcol
-from xlsxwriter.chart_area import ChartArea
-from xlsxwriter.chart_bar import ChartBar
-from xlsxwriter.chart_column import ChartColumn
-from xlsxwriter.chart_doughnut import ChartDoughnut
-from xlsxwriter.chart_line import ChartLine
-from xlsxwriter.chart_pie import ChartPie
-from xlsxwriter.chart_radar import ChartRadar
-from xlsxwriter.chart_scatter import ChartScatter
-from xlsxwriter.chart_stock import ChartStock
+from .chart_area import ChartArea
+from .chart_bar import ChartBar
+from .chart_column import ChartColumn
+from .chart_doughnut import ChartDoughnut
+from .chart_line import ChartLine
+from .chart_pie import ChartPie
+from .chart_radar import ChartRadar
+from .chart_scatter import ChartScatter
+from .chart_stock import ChartStock
+from .exceptions import InvalidWorksheetName
+from .exceptions import DuplicateWorksheetName
+from .exceptions import ReservedWorksheetName
+from .exceptions import UndefinedImageSize
+from .exceptions import UnsupportedImageFormat
 
 
 class Workbook(xmlwriter.XMLwriter):
@@ -48,12 +53,16 @@ class Workbook(xmlwriter.XMLwriter):
     # Public API.
     #
     ###########################################################################
+    chartsheet_class = Chartsheet
+    worksheet_class = Worksheet
 
-    def __init__(self, filename=None, options={}):
+    def __init__(self, filename=None, options=None):
         """
         Constructor.
 
         """
+        if options is None:
+            options = {}
 
         super(Workbook, self).__init__()
 
@@ -66,10 +75,11 @@ class Workbook(xmlwriter.XMLwriter):
         self.strings_to_urls = options.get('strings_to_urls', True)
         self.nan_inf_to_errors = options.get('nan_inf_to_errors', False)
         self.default_date_format = options.get('default_date_format', None)
-        self.optimization = options.get('constant_memory', False)
-        self.optimization_row_buffer = options.get('constant_memory_row_buffer', 1)
+        self.constant_memory = options.get('constant_memory', False)
+        self.constant_memory_row_buffer = options.get('constant_memory_row_buffer', 1)
         self.in_memory = options.get('in_memory', False)
         self.excel2003_style = options.get('excel2003_style', False)
+        self.remove_timezone = options.get('remove_timezone', False)
         self.default_format_properties = \
             options.get('default_format_properties', {})
 
@@ -106,7 +116,7 @@ class Workbook(xmlwriter.XMLwriter):
         self.y_window = 15
         self.window_width = 16095
         self.window_height = 9660
-        self.tab_ratio = 500
+        self.tab_ratio = 600
         self.str_table = SharedStringTable()
         self.vba_project = None
         self.vba_is_stream = False
@@ -123,7 +133,7 @@ class Workbook(xmlwriter.XMLwriter):
 
         # We can't do 'constant_memory' mode while doing 'in_memory' mode.
         if self.in_memory:
-            self.optimization = False
+            self.constant_memory = False
 
         # Add the default cell format.
         if self.excel2003_style:
@@ -132,22 +142,12 @@ class Workbook(xmlwriter.XMLwriter):
             self.add_format({'xf_index': 0})
 
         # Add a default URL format.
-        self.default_url_format = self.add_format({'color': 'blue',
-                                                   'underline': 1})
+        self.default_url_format = self.add_format({'hyperlink': True})
 
         # Add the default date format.
         if self.default_date_format is not None:
             self.default_date_format = \
                 self.add_format({'num_format': self.default_date_format})
-
-    def __del__(self):
-        """Close file in destructor if it hasn't been closed explicitly."""
-        try:
-            if not self.fileclosed:
-                self.close()
-        except:
-            raise Exception("Exception caught in workbook destructor. "
-                            "Explicit close() may be required for workbook.")
 
     def __enter__(self):
         """Return self object to use with "with" statement."""
@@ -157,35 +157,43 @@ class Workbook(xmlwriter.XMLwriter):
         """Close workbook when exiting "with" statement."""
         self.close()
 
-    def add_worksheet(self, name=None, options=None):
+    def add_worksheet(self, name=None, worksheet_class=None, options=None):
         """
         Add a new worksheet to the Excel workbook.
 
         Args:
-            name:    The worksheet name. Defaults to 'Sheet1', etc.
-            options: The worksheet options. Defaults to None.
+            name:            The worksheet name. Defaults to 'Sheet1', etc.
+            worksheet_class: The worksheet class. Defaults to None.
+            options:         The worksheet options. Defaults to None.
 
         Returns:
             Reference to a worksheet object.
 
         """
-        return self._add_sheet(name, is_chartsheet=False, extra_init_data=options)
+        if worksheet_class is None:
+            worksheet_class = self.worksheet_class
 
-    def add_chartsheet(self, name=None, options=None):
+        return self._add_sheet(name, worksheet_class=worksheet_class, extra_init_data=options)
+
+    def add_chartsheet(self, name=None, chartsheet_class=None, options=None):
         """
         Add a new chartsheet to the Excel workbook.
 
         Args:
-            name:    The chartsheet name. Defaults to 'Sheet1', etc.
-            options: The worksheet options. Defaults to None.
+            name:             The chartsheet name. Defaults to 'Sheet1', etc.
+            chartsheet_class: The chartsheet class. Defaults to None.
+            options:          The worksheet options. Defaults to None.
 
         Returns:
             Reference to a chartsheet object.
 
         """
-        return self._add_sheet(name, is_chartsheet=True, extra_init_data=options)
+        if chartsheet_class is None:
+            chartsheet_class = self.chartsheet_class
 
-    def add_format(self, properties={}):
+        return self._add_sheet(name, worksheet_class=chartsheet_class, extra_init_data=options)
+
+    def add_format(self, properties=None):
         """
         Add a new Format to the Excel Workbook.
 
@@ -202,7 +210,8 @@ class Workbook(xmlwriter.XMLwriter):
             format_properties = {'font_name': 'Arial', 'font_size': 10,
                                  'theme': 1 * -1}
 
-        format_properties.update(properties)
+        if properties:
+            format_properties.update(properties)
 
         xf_format = Format(format_properties,
                            self.xf_format_indices,
@@ -259,6 +268,7 @@ class Workbook(xmlwriter.XMLwriter):
 
         chart.embedded = True
         chart.date_1904 = self.date_1904
+        chart.remove_timezone = self.remove_timezone
 
         self.charts.append(chart)
 
@@ -281,6 +291,9 @@ class Workbook(xmlwriter.XMLwriter):
                  % force_unicode(vba_project))
             return -1
 
+        if self.vba_codename is None:
+            self.vba_codename = 'ThisWorkbook'
+
         self.vba_project = vba_project
         self.vba_is_stream = is_stream
 
@@ -298,6 +311,48 @@ class Workbook(xmlwriter.XMLwriter):
         if not self.fileclosed:
             self.fileclosed = 1
             self._store_workbook()
+
+    def set_size(self, width, height):
+        """
+        Set the size of a workbook window.
+
+        Args:
+            width:  Width  of the window in pixels.
+            height: Height of the window in pixels.
+
+        Returns:
+            Nothing.
+
+        """
+        # Convert the width/height to twips at 96 dpi.
+        if width:
+            self.window_width = int(width * 1440 / 96)
+        else:
+            self.window_width = 16095
+
+        if height:
+            self.window_height = int(height * 1440 / 96)
+        else:
+            self.window_height = 9660
+
+    def set_tab_ratio(self, tab_ratio=None):
+        """
+        Set the ratio between worksheet tabs and the horizontal slider.
+
+        Args:
+            tab_ratio: The tab ratio, 0 <= tab_ratio <= 100
+
+        Returns:
+            Nothing.
+
+        """
+        if tab_ratio is None:
+            return
+
+        if tab_ratio < 0 or tab_ratio > 100:
+            warn("Tab ratio '%d' outside: 0 <= tab_ratio <= 100" % tab_ratio)
+        else:
+            self.tab_ratio = int(tab_ratio * 10)
 
     def set_properties(self, properties):
         """
@@ -470,6 +525,21 @@ class Workbook(xmlwriter.XMLwriter):
         """
         return self.sheetnames.get(name)
 
+    def get_default_url_format(self):
+        """
+        Get the default url format used when a user defined format isn't
+        specified with write_url(). The format is the hyperlink style defined
+        by Excel for the default theme.
+
+        Args:
+            None.
+
+        Returns:
+            A format object.
+
+        """
+        return self.default_url_format
+
     def use_zip64(self):
         """
         Allow ZIP64 extensions when writing xlsx file zip container.
@@ -560,6 +630,12 @@ class Workbook(xmlwriter.XMLwriter):
             if sheet.index == self.worksheet_meta.activesheet:
                 sheet.active = 1
 
+        # Set the sheet vba_codename the workbook has a vbaProject binary.
+        if self.vba_project:
+            for sheet in self.worksheets():
+                if sheet.vba_codename is None:
+                    sheet.set_vba_name()
+
         # Convert the SST strings data structure.
         self._prepare_sst_string_data()
 
@@ -593,24 +669,40 @@ class Workbook(xmlwriter.XMLwriter):
         # Add XML sub-files to the Zip file with their Excel filename.
         for os_filename, xml_filename, is_binary in xml_files:
             if self.in_memory:
-                # The files are in-memory StringIOs.
+
+                # Set sub-file timestamp to Excel's timestamp of 1/1/1980.
+                zipinfo = ZipInfo(xml_filename, (1980, 1, 1, 0, 0, 0))
+
+                # Copy compression type from parent ZipFile.
+                zipinfo.compress_type = xlsx_file.compression
+
                 if is_binary:
-                    xlsx_file.writestr(xml_filename, os_filename.getvalue())
+                    xlsx_file.writestr(zipinfo, os_filename.getvalue())
                 else:
-                    xlsx_file.writestr(xml_filename,
+                    xlsx_file.writestr(zipinfo,
                                        os_filename.getvalue().encode('utf-8'))
             else:
                 # The files are tempfiles.
+
+                # Set sub-file timestamp to Excel's timestamp of 1/1/1980.
+                timestamp = time.mktime((1980, 1, 1, 0, 0, 0, 0, 0, -1))
+                os.utime(os_filename, (timestamp, timestamp))
+
                 xlsx_file.write(os_filename, xml_filename)
                 os.remove(os_filename)
 
         xlsx_file.close()
 
-    def _add_sheet(self, name, is_chartsheet, extra_init_data=None):
+    def _add_sheet(self, name, worksheet_class=None, extra_init_data=None):
         # Utility for shared code in add_worksheet() and add_chartsheet().
 
+        if worksheet_class:
+            worksheet = worksheet_class()
+        else:
+            worksheet = self.worksheet_class()
+
         sheet_index = len(self.worksheets_objs)
-        name = self._check_sheetname(name, is_chartsheet)
+        name = self._check_sheetname(name, isinstance(worksheet, Chartsheet))
 
         # Initialization data to pass to the worksheet.
         init_data = {
@@ -618,8 +710,8 @@ class Workbook(xmlwriter.XMLwriter):
             'index': sheet_index,
             'str_table': self.str_table,
             'worksheet_meta': self.worksheet_meta,
-            'optimization': self.optimization,
-            'constant_memory_row_buffer': self.optimization_row_buffer,
+            'constant_memory': self.constant_memory,
+            'constant_memory_row_buffer': self.constant_memory_row_buffer,
             'tmpdir': self.tmpdir,
             'date_1904': self.date_1904,
             'strings_to_numbers': self.strings_to_numbers,
@@ -629,14 +721,10 @@ class Workbook(xmlwriter.XMLwriter):
             'default_date_format': self.default_date_format,
             'default_url_format': self.default_url_format,
             'excel2003_style': self.excel2003_style,
+            'remove_timezone': self.remove_timezone,
         }
         if extra_init_data is not None:
             init_data.update(extra_init_data)
-
-        if is_chartsheet:
-            worksheet = Chartsheet()
-        else:
-            worksheet = Worksheet()
 
         worksheet._initialize(init_data)
 
@@ -657,7 +745,7 @@ class Workbook(xmlwriter.XMLwriter):
             self.sheetname_count += 1
 
         # Supply default Sheet/Chart sheetname if none has been defined.
-        if sheetname is None:
+        if sheetname is None or sheetname == '':
             if is_chartsheet:
                 sheetname = self.chart_name + str(self.chartname_count)
             else:
@@ -665,20 +753,32 @@ class Workbook(xmlwriter.XMLwriter):
 
         # Check that sheet sheetname is <= 31. Excel limit.
         if len(sheetname) > 31:
-            raise Exception("Excel worksheet name '%s' must be <= 31 chars." %
-                            sheetname)
-
-        # Check that sheetname doesn't contain any invalid characters
-        if invalid_char.search(sheetname):
-            raise Exception(
-                "Invalid Excel character '[]:*?/\\' in sheetname '%s'" %
+            raise InvalidWorksheetName(
+                "Excel worksheet name '%s' must be <= 31 chars." %
                 sheetname)
+
+        # Check that sheetname doesn't contain any invalid characters.
+        if invalid_char.search(sheetname):
+            raise InvalidWorksheetName(
+                "Invalid Excel character '[]:*?/\\' in sheetname '%s'." %
+                sheetname)
+
+        # Check that sheetname doesn't start or end with an apostrophe.
+        if sheetname.startswith("'") or sheetname.endswith("'"):
+            raise InvalidWorksheetName(
+                "Sheet name cannot start or end with an apostrophe \"%s\"." %
+                sheetname)
+
+        # Check that sheetname isn't the reserved work "History".
+        if sheetname.lower() == 'history':
+            raise ReservedWorksheetName(
+                "Worksheet name 'History' is reserved by Excel")
 
         # Check that the worksheet name doesn't already exist since this is a
         # fatal Excel error. The check must be case insensitive like Excel.
         for worksheet in self.worksheets():
             if sheetname.lower() == worksheet.name.lower():
-                raise Exception(
+                raise DuplicateWorksheetName(
                     "Sheetname '%s', with case ignored, is already in use." %
                     sheetname)
 
@@ -786,7 +886,21 @@ class Workbook(xmlwriter.XMLwriter):
 
             # Check if num_format is an index to a built-in number format.
             if not isinstance(num_format, str_types):
-                xf_format.num_format_index = int(num_format)
+                num_format = int(num_format)
+
+                # Number format '0' is indexed as 1 in Excel.
+                if num_format == 0:
+                    num_format = 1
+
+                xf_format.num_format_index = num_format
+                continue
+            elif num_format == '0':
+                # Number format '0' is indexed as 1 in Excel.
+                xf_format.num_format_index = 1
+                continue
+            elif num_format == 'General':
+                # The 'General' format has an number format index of 0.
+                xf_format.num_format_index = 0
                 continue
 
             if num_format in num_formats:
@@ -967,8 +1081,6 @@ class Workbook(xmlwriter.XMLwriter):
         chart_ref_id = 0
         image_ref_id = 0
         drawing_id = 0
-        x_dpi = 96
-        y_dpi = 96
 
         for sheet in self.worksheets():
             chart_count = len(sheet.charts)
@@ -1074,38 +1186,44 @@ class Workbook(xmlwriter.XMLwriter):
         image_name = os.path.basename(filename)
 
         # Look for some common image file markers.
-        marker1 = (unpack('3s', data[1:4]))[0]
-        marker2 = (unpack('>H', data[:2]))[0]
-        marker3 = (unpack('2s', data[:2]))[0]
+        marker1 = unpack('3s', data[1:4])[0]
+        marker2 = unpack('>H', data[:2])[0]
+        marker3 = unpack('2s', data[:2])[0]
+        marker4 = unpack('<L', data[:4])[0]
+        marker5 = (unpack('4s', data[40:44]))[0]
 
-        if sys.version_info < (2, 6, 0):
-            # Python 2.5/Jython.
-            png_marker = 'PNG'
-            bmp_marker = 'BM'
-        else:
-            # Eval the binary literals for Python 2.5/Jython compatibility.
-            png_marker = eval("b'PNG'")
-            bmp_marker = eval("b'BM'")
+        png_marker = b'PNG'
+        bmp_marker = b'BM'
+        emf_marker = b' EMF'
 
         if marker1 == png_marker:
-            self.image_types['png'] = 1
+            self.image_types['png'] = True
             (image_type, width, height, x_dpi, y_dpi) = self._process_png(data)
 
         elif marker2 == 0xFFD8:
-            self.image_types['jpeg'] = 1
+            self.image_types['jpeg'] = True
             (image_type, width, height, x_dpi, y_dpi) = self._process_jpg(data)
 
         elif marker3 == bmp_marker:
-            self.image_types['bmp'] = 1
+            self.image_types['bmp'] = True
             (image_type, width, height) = self._process_bmp(data)
 
+        elif marker4 == 0x9AC6CDD7:
+            self.image_types['wmf'] = True
+            (image_type, width, height, x_dpi, y_dpi) = self._process_wmf(data)
+
+        elif marker4 == 1 and marker5 == emf_marker:
+            self.image_types['emf'] = True
+            (image_type, width, height, x_dpi, y_dpi) = self._process_emf(data)
+
         else:
-            raise Exception("%s: Unknown or unsupported image file format."
-                            % filename)
+            raise UnsupportedImageFormat(
+                "%s: Unknown or unsupported image file format." % filename)
 
         # Check that we found the required data.
         if not height or not width:
-            raise Exception("%s: no size data found in image file." % filename)
+            raise UndefinedImageSize(
+                "%s: no size data found in image file." % filename)
 
         # Store image data to copy it into file container.
         self.images.append([filename, image_type, image_data])
@@ -1140,19 +1258,19 @@ class Workbook(xmlwriter.XMLwriter):
         # IHDR element. Also read the DPI in the pHYs element.
         while not end_marker and offset < data_length:
 
-            length = (unpack('>I', data[offset + 0:offset + 4]))[0]
-            marker = (unpack('>I', data[offset + 4:offset + 8]))[0]
+            length = unpack('>I', data[offset + 0:offset + 4])[0]
+            marker = unpack('>I', data[offset + 4:offset + 8])[0]
 
             # Read the image dimensions.
             if marker == marker_ihdr:
-                width = (unpack('>I', data[offset + 8:offset + 12]))[0]
-                height = (unpack('>I', data[offset + 12:offset + 16]))[0]
+                width = unpack('>I', data[offset + 8:offset + 12])[0]
+                height = unpack('>I', data[offset + 12:offset + 16])[0]
 
             # Read the image DPI.
             if marker == marker_phys:
-                x_density = (unpack('>I', data[offset + 8:offset + 12]))[0]
-                y_density = (unpack('>I', data[offset + 12:offset + 16]))[0]
-                units = (unpack('b', data[offset + 16:offset + 17]))[0]
+                x_density = unpack('>I', data[offset + 8:offset + 12])[0]
+                y_density = unpack('>I', data[offset + 12:offset + 16])[0]
+                units = unpack('b', data[offset + 16:offset + 17])[0]
 
                 if units == 1:
                     x_dpi = x_density * 0.0254
@@ -1176,23 +1294,26 @@ class Workbook(xmlwriter.XMLwriter):
         x_dpi = 96
         y_dpi = 96
 
-        # Search through the image data to read the height and width in the
-        # 0xFFC0/C2 element. Also read the DPI in the 0xFFE0 element.
+        # Search through the image data to read the JPEG markers.
         while not end_marker and offset < data_length:
 
-            marker = (unpack('>H', data[offset + 0:offset + 2]))[0]
-            length = (unpack('>H', data[offset + 2:offset + 4]))[0]
+            marker = unpack('>H', data[offset + 0:offset + 2])[0]
+            length = unpack('>H', data[offset + 2:offset + 4])[0]
 
-            # Read the image dimensions.
-            if marker == 0xFFC0 or marker == 0xFFC2:
-                height = (unpack('>H', data[offset + 5:offset + 7]))[0]
-                width = (unpack('>H', data[offset + 7:offset + 9]))[0]
+            # Read the height and width in the 0xFFCn elements (except C4, C8
+            # and CC which aren't SOF markers).
+            if ((marker & 0xFFF0) == 0xFFC0
+                    and marker != 0xFFC4
+                    and marker != 0xFFC8
+                    and marker != 0xFFCC):
+                height = unpack('>H', data[offset + 5:offset + 7])[0]
+                width = unpack('>H', data[offset + 7:offset + 9])[0]
 
-            # Read the image DPI.
+            # Read the DPI in the 0xFFE0 element.
             if marker == 0xFFE0:
-                units = (unpack('b', data[offset + 11:offset + 12]))[0]
-                x_density = (unpack('>H', data[offset + 12:offset + 14]))[0]
-                y_density = (unpack('>H', data[offset + 14:offset + 16]))[0]
+                units = unpack('b', data[offset + 11:offset + 12])[0]
+                x_density = unpack('>H', data[offset + 12:offset + 14])[0]
+                y_density = unpack('>H', data[offset + 14:offset + 16])[0]
 
                 if units == 1:
                     x_dpi = x_density
@@ -1218,9 +1339,63 @@ class Workbook(xmlwriter.XMLwriter):
 
     def _process_bmp(self, data):
         # Extract width and height information from a BMP file.
-        width = (unpack('<L', data[18:22]))[0]
-        height = (unpack('<L', data[22:26]))[0]
+        width = unpack('<L', data[18:22])[0]
+        height = unpack('<L', data[22:26])[0]
         return 'bmp', width, height
+
+    def _process_wmf(self, data):
+        # Extract width and height information from a WMF file.
+        x_dpi = 96
+        y_dpi = 96
+
+        # Read the bounding box, measured in logical units.
+        x1 = unpack("<h", data[6:8])[0]
+        y1 = unpack("<h", data[8:10])[0]
+        x2 = unpack("<h", data[10:12])[0]
+        y2 = unpack("<h", data[12:14])[0]
+
+        # Read the number of logical units per inch. Used to scale the image.
+        inch = unpack("<H", data[14:16])[0]
+
+        # Convert to rendered height and width.
+        width = float((x2 - x1) * x_dpi) / inch
+        height = float((y2 - y1) * y_dpi) / inch
+
+        return 'wmf', width, height, x_dpi, y_dpi
+
+    def _process_emf(self, data):
+        # Extract width and height information from a EMF file.
+
+        # Read the bounding box, measured in logical units.
+        bound_x1 = unpack("<l", data[8:12])[0]
+        bound_y1 = unpack("<l", data[12:16])[0]
+        bound_x2 = unpack("<l", data[16:20])[0]
+        bound_y2 = unpack("<l", data[20:24])[0]
+
+        # Convert the bounds to width and height.
+        width = bound_x2 - bound_x1
+        height = bound_y2 - bound_y1
+
+        # Read the rectangular frame in units of 0.01mm.
+        frame_x1 = unpack("<l", data[24:28])[0]
+        frame_y1 = unpack("<l", data[28:32])[0]
+        frame_x2 = unpack("<l", data[32:36])[0]
+        frame_y2 = unpack("<l", data[36:40])[0]
+
+        # Convert the frame bounds to mm width and height.
+        width_mm = 0.01 * (frame_x2 - frame_x1)
+        height_mm = 0.01 * (frame_y2 - frame_y1)
+
+        # Get the dpi based on the logical size.
+        x_dpi = width * 25.4 / width_mm
+        y_dpi = height * 25.4 / height_mm
+
+        # This is to match Excel's calculation. It is probably to account for
+        # the fact that the bounding box is inclusive-inclusive. Or a bug.
+        width += 1
+        height += 1
+
+        return 'emf', width, height, x_dpi, y_dpi
 
     def _extract_named_ranges(self, defined_names):
         # Extract the named ranges from the sorted list of defined names.
@@ -1270,7 +1445,6 @@ class Workbook(xmlwriter.XMLwriter):
         vml_shape_id = 1024
         vml_files = 0
         comment_files = 0
-        has_button = False
 
         for sheet in self.worksheets():
             if not sheet.has_vml and not sheet.has_header_vml:
@@ -1303,24 +1477,11 @@ class Workbook(xmlwriter.XMLwriter):
             self.num_vml_files = vml_files
             self.num_comment_files = comment_files
 
-            if len(sheet.buttons_list):
-                has_button = True
-
-                # Set the sheet vba_codename if it has a button and the
-                # workbook has a vbaProject binary.
-                if self.vba_project and sheet.vba_codename is None:
-                    sheet.set_vba_name()
-
         # Add a font format for cell comments.
         if comment_files > 0:
             xf = self.add_format({'font_name': 'Tahoma', 'font_size': 8,
                                   'color_indexed': 81, 'font_only': True})
             xf._get_xf_index()
-
-        # Set the workbook vba_codename if one of the sheets has a button and
-        # the workbook has a vbaProject binary.
-        if has_button and self.vba_project and self.vba_codename is None:
-            self.set_vba_name()
 
     def _prepare_tables(self):
         # Set the table ids for the worksheet tables.
@@ -1437,7 +1598,7 @@ class Workbook(xmlwriter.XMLwriter):
             # try block for ranges that can't be parsed such as defined names.
             (row_start, col_start) = xl_cell_to_rowcol(cell_1)
             (row_end, col_end) = xl_cell_to_rowcol(cell_2)
-        except:
+        except AttributeError:
             return None, None
 
         # We only handle 1D ranges.
@@ -1521,7 +1682,7 @@ class Workbook(xmlwriter.XMLwriter):
         ]
 
         # Store the tabRatio attribute when it isn't the default.
-        if self.tab_ratio != 500:
+        if self.tab_ratio != 600:
             attributes.append(('tabRatio', self.tab_ratio))
 
         # Store the firstSheet attribute when it isn't the default.

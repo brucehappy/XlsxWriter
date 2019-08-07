@@ -2,11 +2,14 @@
 #
 # Tests for XlsxWriter.
 #
-# Copyright (c), 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright (c), 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 import unittest
 from ...workbook import Workbook
+from ...exceptions import DuplicateWorksheetName
+from ...exceptions import InvalidWorksheetName
+from ...exceptions import ReservedWorksheetName
 
 
 class TestCheckSheetname(unittest.TestCase):
@@ -33,26 +36,51 @@ class TestCheckSheetname(unittest.TestCase):
         exp = 'Sheet3'
         self.assertEqual(got, exp)
 
-    def test_check_sheetname_with_exception1(self):
+        got = self.workbook._check_sheetname('')
+        exp = 'Sheet4'
+        self.assertEqual(got, exp)
+
+    def test_check_sheetname_with_long_name(self):
         """Test the _check_sheetname() method with exception"""
 
         name = 'name_that_is_longer_than_thirty_one_characters'
-        self.assertRaises(Exception, self.workbook._check_sheetname, name)
+        self.assertRaises(InvalidWorksheetName, self.workbook._check_sheetname, name)
 
-    def test_check_sheetname_with_exception2(self):
+    def test_check_sheetname_with_invalid_name(self):
         """Test the _check_sheetname() method with exception"""
 
         name = 'name_with_special_character_?'
-        self.assertRaises(Exception, self.workbook._check_sheetname, name)
+        self.assertRaises(InvalidWorksheetName, self.workbook._check_sheetname, name)
 
-    def test_check_sheetname_with_exception3(self):
+        name = "'start with apostrophe"
+        self.assertRaises(InvalidWorksheetName, self.workbook._check_sheetname, name)
+
+        name = "end with apostrophe'"
+        self.assertRaises(InvalidWorksheetName, self.workbook._check_sheetname, name)
+
+        name = "'start and end with apostrophe'"
+        self.assertRaises(InvalidWorksheetName, self.workbook._check_sheetname, name)
+
+    def test_check_sheetname_with_reserved_name(self):
+        """Test the _check_sheetname() method with exception"""
+
+        name = 'History'
+        self.assertRaises(ReservedWorksheetName, self.workbook._check_sheetname, name)
+
+        name = 'history'
+        self.assertRaises(ReservedWorksheetName, self.workbook._check_sheetname, name)
+
+        name = 'HiStOrY'
+        self.assertRaises(ReservedWorksheetName, self.workbook._check_sheetname, name)
+
+    def test_check_sheetname_with_duplicate_name(self):
         """Test the _check_sheetname() method with exception"""
 
         name1 = 'Duplicate_name'
         name2 = name1.lower()
 
         self.workbook.add_worksheet(name1)
-        self.assertRaises(Exception, self.workbook.add_worksheet, name2)
+        self.assertRaises(DuplicateWorksheetName, self.workbook.add_worksheet, name2)
 
     def tearDown(self):
-        self.workbook.fileclosed = 1
+        self.workbook.fileclosed = True

@@ -2,7 +2,7 @@
 #
 # ChartLine - A class for writing the Excel XLSX Line charts.
 #
-# Copyright 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 from . import chart
@@ -27,9 +27,6 @@ class ChartLine(chart.Chart):
 
         """
         super(ChartLine, self).__init__()
-
-        if options is None:
-            options = {}
 
         self.default_marker = {'type': 'none'}
         self.smooth_allowed = True
@@ -117,3 +114,9 @@ class ChartLine(chart.Chart):
         self._xml_end_tag('c:marker')
 
         self._xml_end_tag('c:dPt')
+
+    def _write_marker_value(self):
+        # Write the <c:marker> element without a sub-element.
+        attributes = [('val', 1)]
+
+        self._xml_empty_tag('c:marker', attributes)

@@ -11,7 +11,7 @@ Scatter, Stock and Radar.
 A chart object is created via the Workbook :func:`add_chart()` method where the
 chart type is specified::
 
-    chart = workbook.add_chart({type, 'column'})
+    chart = workbook.add_chart({'type': 'column'})
 
 It is then inserted into a worksheet as an embedded chart using the
 :func:`insert_chart` Worksheet method::
@@ -160,11 +160,11 @@ The series options that can be set are:
   property is optional and the chart will just assume a sequential series from
   ``1..n``.
 
-* ``name``: Set the name for the series. The name is displayed in the chart
-  legend and in the formula bar. The name property is optional and if it isn't
-  supplied it will default to ``Series 1..n``. The name can also be a formula
-  such as ``=Sheet1!$A$1`` or a list with a sheetname, row and column such as
-  ``['Sheet1', 0, 0]``.
+* ``name``: Set the name for the series. The name is displayed in the formula
+  bar. For non-Pie/Doughnut charts it is also displayed in the legend. The
+  name property is optional and if it isn't supplied it will default to
+  ``Series 1..n``. The name can also be a formula such as ``=Sheet1!$A$1`` or
+  a list with a sheetname, row and column such as ``['Sheet1', 0, 0]``.
 
 * ``line``: Set the properties of the series line type such as color and
   width. See :ref:`chart_formatting_line`.
@@ -284,6 +284,7 @@ The options that can be set are::
     reverse
     log_base
     label_position
+    label_align
     major_gridlines
     minor_gridlines
     visible
@@ -422,7 +423,7 @@ the axis types.
 * ``reverse``: Reverse the order of the axis categories or values.
   (Applicable to category, date and value axes.)::
 
-    chart.set_y_axis({'reverse': True})
+    chart.set_x_axis({'reverse': True})
 
   .. image:: _images/chart_reverse.png
      :scale: 75 %
@@ -444,6 +445,19 @@ the axis types.
 
     chart.set_x_axis({'label_position': 'high'})
     chart.set_y_axis({'label_position': 'low'})
+
+* ``label_align``: Align the "Axis labels" the axis. (Applicable to category
+  axes only.)
+
+  The following Excel alignments are available::
+
+    center (the default)
+    right
+    left
+
+  For example::
+
+    chart.set_x_axis({'label_align': 'left'})
 
 * ``major_gridlines``: Configure the major gridlines for the axis. The
   available properties are::
@@ -643,7 +657,7 @@ See the :ref:`chart_combined_charts` section for more details.
 chart.set_size()
 ----------------
 
-.. py:function:: set_size(options)
+.. :noindex: py:function:: set_size(options)
 
    Set the size or scale of the chart.
 
@@ -746,9 +760,13 @@ The options that can be set are::
 
     none
     position
-    layout
     font
+    border
+    fill
+    pattern
+    gradient
     delete_series
+    layout
 
 * ``none``: In Excel chart legends are on by default. The ``none`` option
   turns off the chart legend::
@@ -777,6 +795,35 @@ The options that can be set are::
     overlay_right
     none
 
+
+* ``font``: Set the font properties of the chart legend::
+
+    chart.set_legend({'font': {'size': 9, 'bold': True}})
+
+  See the :ref:`chart_fonts` section for more details on font properties.
+
+* ``border``: Set the border properties of the legend such as color and
+  style. See :ref:`chart_formatting_border`.
+
+* ``fill``: Set the solid fill properties of the legend such as color. See
+  :ref:`chart_formatting_fill`.
+
+* ``pattern``: Set the pattern fill properties of the legend. See
+  :ref:`chart_formatting_pattern`.
+
+* ``gradient``: Set the gradient fill properties of the legend. See
+  :ref:`chart_formatting_gradient`.
+
+* ``delete_series``: This allows you to remove one or more series from the
+  legend (the series will still display on the chart). This property takes
+  a list as an argument and the series are zero indexed::
+
+    # Delete/hide series index 0 and 2 from the legend.
+    chart.set_legend({'delete_series': [0, 2]})
+
+  .. image:: _images/chart_legend_delete.png
+     :scale: 75 %
+
 * ``layout``: Set the ``(x, y)`` position of the legend in chart relative
   units::
 
@@ -790,22 +837,6 @@ The options that can be set are::
      })
 
   See the :ref:`chart_layout` section for more details.
-
-* ``font``: Set the font properties of the chart legend::
-
-    chart.set_legend({'font': {'size': 9, 'bold': 1}})
-
-  See the :ref:`chart_fonts` section for more details on font properties.
-
-* ``delete_series``: This allows you to remove one or more series from the
-  the legend (the series will still display on the chart). This property takes
-  a list as an argument and the series are zero indexed::
-
-    # Delete/hide series index 0 and 2 from the legend.
-    chart.set_legend({'delete_series': [0, 2]})
-
-  .. image:: _images/chart_legend_delete.png
-     :scale: 75 %
 
 
 chart.set_chartarea()
@@ -1098,7 +1129,7 @@ of a Pie/Doughnut chart. This has the effect of rotating the entire chart::
 
     chart->set_rotation(90)
 
-The angle of rotation must be ``0 <= rotation <= 360``.
+The angle of rotation must be in the range ``0 <= rotation <= 360``.
 
 This option is only available for Pie/Doughnut charts.
 
@@ -1118,7 +1149,7 @@ chart::
 
     chart->set_hole_size(33)
 
-The angle of hole size must be ``10 <= size <= 90``.
+The value of the hole size must be in the range ``10 <= size <= 90``.
 
 This option is only available for Doughnut charts.
 

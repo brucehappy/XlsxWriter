@@ -7,8 +7,8 @@ try:
 except ImportError:
     from distutils.core import setup, Command
 
-if sys.version_info < (2, 5, 0):
-    warn("The minimum Python version supported by XlsxWriter is 2.5.")
+if sys.version_info < (2, 7, 0):
+    warn("The minimum Python version supported by XlsxWriter is 2.7.")
     exit()
 
 
@@ -28,7 +28,7 @@ class PyTest(Command):
 
 setup(
     name='XlsxWriter',
-    version='0.9.1.2',
+    version='1.1.8',
     author='John McNamara',
     author_email='jmcnamara@cpan.org',
     url='https://github.com/brucehappy/XlsxWriter',
@@ -42,13 +42,12 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.5',
-        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.1',
-        'Programming Language :: Python :: 3.2',
-        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
 )

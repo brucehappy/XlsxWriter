@@ -8,7 +8,7 @@ In general a formula in Excel can be used directly in the
 
     worksheet.write_formula('A1', '=10*B1 + C1')
 
-.. image:: _images/working_with_formulas2.png
+.. image:: _images/working_with_formulas1.png
 
 However, there are a few potential issues and differences that the user should
 be aware of. These are explained in the following sections.
@@ -34,7 +34,7 @@ should be written as follows::
     worksheet.write_formula('A2', '=SUM(1; 2; 3)')   # Semi-colon. Error on load.
 
 If you have a non-English version of Excel you can use the following
-multi-lingual `formula translator <http://en.excel-translator.de/language/>`_
+multi-lingual `formula translator <https://en.excel-translator.de/language/>`_
 to help you convert the formula. It can also replace semi-colons with commas.
 
 
@@ -84,6 +84,7 @@ The following list is taken from
 * ``_xlfn.CHISQ.INV.RT``
 * ``_xlfn.CHISQ.TEST``
 * ``_xlfn.COMBINA``
+* ``_xlfn.CONCAT``
 * ``_xlfn.CONFIDENCE.NORM``
 * ``_xlfn.CONFIDENCE.T``
 * ``_xlfn.COT``
@@ -119,6 +120,7 @@ The following list is taken from
 * ``_xlfn.GAUSS``
 * ``_xlfn.HYPGEOM.DIST``
 * ``_xlfn.IFNA``
+* ``_xlfn.IFS``
 * ``_xlfn.IMCOSH``
 * ``_xlfn.IMCOT``
 * ``_xlfn.IMCSC``
@@ -132,6 +134,8 @@ The following list is taken from
 * ``_xlfn.ISOWEEKNUM``
 * ``_xlfn.LOGNORM.DIST``
 * ``_xlfn.LOGNORM.INV``
+* ``_xlfn.MAXIFS``
+* ``_xlfn.MINIFS``
 * ``_xlfn.MODE.MULT``
 * ``_xlfn.MODE.SNGL``
 * ``_xlfn.MUNIT``
@@ -163,12 +167,14 @@ The following list is taken from
 * ``_xlfn.SKEW.P``
 * ``_xlfn.STDEV.P``
 * ``_xlfn.STDEV.S``
+* ``_xlfn.SWITCH``
 * ``_xlfn.T.DIST``
 * ``_xlfn.T.DIST.2T``
 * ``_xlfn.T.DIST.RT``
 * ``_xlfn.T.INV``
 * ``_xlfn.T.INV.2T``
 * ``_xlfn.T.TEST``
+* ``_xlfn.TEXTJOIN``
 * ``_xlfn.UNICHAR``
 * ``_xlfn.UNICODE``
 * ``_xlfn.VAR.P``
@@ -278,7 +284,7 @@ It is also possible to specify the calculated result of an array formula
 created with :func:`write_array_formula`::
 
     # Specify the result for a single cell range.
-    worksheet.write_array_formula('A1:A1', '{=SUM(B1:C1*B2:C2)}', format, 2005)
+    worksheet.write_array_formula('A1:A1', '{=SUM(B1:C1*B2:C2)}', cell_format, 2005)
 
 However, using this parameter only writes a single value to the upper left
 cell in the result array. For a multi-cell array formula where the results are
@@ -286,6 +292,6 @@ required, the other result values can be specified by using ``write_number()``
 to write to the appropriate cell::
 
     # Specify the results for a multi cell range.
-    worksheet.write_array_formula('A1:A3', '{=TREND(C1:C3,B1:B3)}', format, 15)
-    worksheet.write_number('A2', 12, format)
-    worksheet.write_number('A3', 14, format)
+    worksheet.write_array_formula('A1:A3', '{=TREND(C1:C3,B1:B3)}', cell_format, 15)
+    worksheet.write_number('A2', 12, cell_format)
+    worksheet.write_number('A3', 14, cell_format)

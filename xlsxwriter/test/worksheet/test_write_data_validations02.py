@@ -2,7 +2,7 @@
 #
 # Tests for XlsxWriter.
 #
-# Copyright (c), 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright (c), 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 import unittest
@@ -924,7 +924,7 @@ class TestWriteDataValidations(unittest.TestCase):
 
         self.assertEqual(got, exp)
 
-    def test_write_data_validations_21(self):
+    def test_write_data_validations_45(self):
         """
         Test 45 Test 'any' with input messages.
         """
@@ -936,6 +936,26 @@ class TestWriteDataValidations(unittest.TestCase):
         self.worksheet._write_data_validations()
 
         exp = '<dataValidations count="1"><dataValidation allowBlank="1" showInputMessage="1" showErrorMessage="1" promptTitle="Input title January" prompt="Input message February" sqref="B5"/></dataValidations>'
+        got = self.fh.getvalue()
+
+        exp = _xml_to_list(exp)
+        got = _xml_to_list(got)
+
+        self.assertEqual(got, exp)
+
+    def test_write_data_validations_46(self):
+        """
+        Test 46 Date between ranges with formulas.
+        """
+        self.worksheet.data_validation('B5', {'validate': 'date',
+                                              'criteria': 'between',
+                                              'minimum': date(2018, 1, 1),
+                                              'maximum': '=TODAY()',
+                                              })
+
+        self.worksheet._write_data_validations()
+
+        exp = '<dataValidations count="1"><dataValidation type="date" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="B5"><formula1>43101</formula1><formula2>TODAY()</formula2></dataValidation></dataValidations>'
         got = self.fh.getvalue()
 
         exp = _xml_to_list(exp)

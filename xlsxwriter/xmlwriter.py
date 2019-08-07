@@ -4,7 +4,7 @@
 #
 # Used in conjunction with XlsxWriter.
 #
-# Copyright 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 # Standard packages.
@@ -134,7 +134,7 @@ class XMLwriter(object):
             value = self._escape_attributes(value)
             attr += ' %s="%s"' % (key, value)
 
-        self.fh.write("""<c%s><v>%.15g</v></c>""" % (attr, number))
+        self.fh.write("""<c%s><v>%.16g</v></c>""" % (attr, number))
 
     def _xml_formula_element(self, formula, result, attributes=[]):
         # Optimized tag writer for <c> cell formula elements in the inner loop.
@@ -185,11 +185,11 @@ class XMLwriter(object):
         except TypeError:
             return attribute
 
-        attribute = attribute.replace('&', '&amp;')
-        attribute = attribute.replace('"', '&quot;')
-        attribute = attribute.replace('<', '&lt;')
-        attribute = attribute.replace('>', '&gt;')
-        attribute = attribute.replace('\n', '&#xA;')
+        attribute = re.sub('[&]', '&amp;', attribute)
+        attribute = re.sub('["]', '&quot;', attribute)
+        attribute = re.sub('[<]', '&lt;', attribute)
+        attribute = re.sub('[>]', '&gt;', attribute)
+        attribute = re.sub('[\n]', '&#xA;', attribute)
 
         return attribute
 
@@ -203,8 +203,8 @@ class XMLwriter(object):
         except TypeError:
             return data
 
-        data = data.replace('&', '&amp;')
-        data = data.replace('<', '&lt;')
-        data = data.replace('>', '&gt;')
+        data = re.sub('[&]', '&amp;', data)
+        data = re.sub('[<]', '&lt;', data)
+        data = re.sub('[>]', '&gt;', data)
 
         return data

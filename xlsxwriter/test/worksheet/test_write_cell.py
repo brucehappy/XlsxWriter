@@ -2,12 +2,12 @@
 #
 # Tests for XlsxWriter.
 #
-# Copyright (c), 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright (c), 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 import unittest
+from collections import namedtuple
 from ...compatibility import StringIO
-from ...compat_collections import namedtuple
 from ...worksheet import Worksheet
 
 

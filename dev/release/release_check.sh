@@ -32,6 +32,93 @@ function check_test_status {
             check_test_status
          fi
     fi
+    clear
+}
+
+
+#############################################################
+#
+# Run spellcheck.
+#
+function check_spellcheck {
+
+    echo
+    echo -n "Is the spellcheck ok?                  [y/N]: "
+    read RESPONSE
+
+    if [ "$RESPONSE" != "y" ]; then
+
+        echo -n "    Run spellcheck now?                [y/N]: "
+        read RESPONSE
+
+        if [ "$RESPONSE" != "y" ]; then
+            echo
+            echo -e "Please run: make spellcheck\n";
+            exit 1
+        else
+            echo "    Running spellcheck...";
+            make spellcheck
+            check_spellcheck
+         fi
+    fi
+    clear
+}
+
+
+#############################################################
+#
+# Run test_codestyle.
+#
+function check_test_codestyle {
+
+    echo
+    echo -n "Is the test_codestyle ok?                  [y/N]: "
+    read RESPONSE
+
+    if [ "$RESPONSE" != "y" ]; then
+
+        echo -n "    Run test_codestyle now?                [y/N]: "
+        read RESPONSE
+
+        if [ "$RESPONSE" != "y" ]; then
+            echo
+            echo -e "Please run: make test_codestyle\n";
+            exit 1
+        else
+            echo "    Running test_codestyle...";
+            make test_codestyle
+            check_test_codestyle
+         fi
+    fi
+}
+
+
+#############################################################
+#
+# Run testwarnings.
+#
+function check_testwarnings {
+    clear
+
+    echo
+    echo -n "Is the testwarnings ok?              [y/N]: "
+    read RESPONSE
+
+    if [ "$RESPONSE" != "y" ]; then
+
+        echo -n "    Run testwarnings now?            [y/N]: "
+        read RESPONSE
+
+        if [ "$RESPONSE" != "y" ]; then
+            echo
+            echo -e "Please run: make testwarnings\n";
+            exit 1
+        else
+            echo "    Running testwarnings...";
+            make testwarnings
+            check_testwarnings
+         fi
+    fi
 }
 
 
@@ -135,12 +222,15 @@ function check_git_status {
         echo
         echo -e "Please fix git status.\n";
 
-        git tag -l -n1 | tail -1 | perl -lane 'printf "git commit -m \"Prep for release %s\"\ngit tag \"%s\"\n\n", $F[4], $F[0]' | perl dev/release/update_revison.pl
+        git tag -l -n1 | tail -1 | perl -lane 'printf "git add -u\ngit commit -m \"Prep for release %s\"\ngit tag \"%s\"\n\n", $F[4], $F[0]' | perl dev/release/update_revison.pl
         exit 1
     fi
 }
 
 check_test_status
+check_spellcheck
+check_test_codestyle
+check_testwarnings
 check_changefile
 check_versions
 check_pdf_doc

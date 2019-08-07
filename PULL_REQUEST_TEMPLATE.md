@@ -40,9 +40,9 @@ Follow the general style of the surrounding code and format it to the [PEP8](htt
 
 Tests should conform to `PEP8` but can ignore `E501` for long lines to allow the inclusion of Excel XML in tests.
 
-There is a make target that will verify the source and test files:
+There is a make target that will verify the source and test files using [pytestcodestyle](https://github.com/PyCQA/pycodestyle):
 
-    make testpep8
+    make test_codestyle
 
 
 ### Running tests
@@ -54,7 +54,7 @@ As a minimum, tests should be run using Python 2.7 and Python 3.5.
     # or
     py.test
 
-I use [pythonbrew](https://github.com/utahta/pythonbrew) and [Tox](http://tox.readthedocs.org/en/latest/) to test with a variety of Python versions. See the Makefile for example test targets. A `tox.ini` file is already configured.
+I use [pythonbrew](https://github.com/utahta/pythonbrew) and [Tox](https://tox.readthedocs.io/en/latest/) to test with a variety of Python versions. See the Makefile for example test targets. A `tox.ini` file is already configured.
 
 When you push your changes they will also be tested using [Travis CI](https://travis-ci.org/jmcnamara/XlsxWriter/) as explained above.
 

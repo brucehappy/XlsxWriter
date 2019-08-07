@@ -38,6 +38,10 @@ worksheet.write()
    :param \*args:      The additional args that are passed to the sub methods
                        such as number, string and cell_format.
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+   :returns:  Other values from the called write methods.
+
 Excel makes a distinction between data types such as strings, numbers, blanks,
 formulas and hyperlinks. To simplify the process of writing data to an
 XlsxWriter file the ``write()`` method acts as a general alias for several
@@ -145,14 +149,18 @@ worksheet.write_string()
    :type  string:      string
    :type  cell_format: :ref:`Format <format>`
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+   :returns: -2: String truncated to 32k characters.
+
 The ``write_string()`` method writes a string to the cell specified by ``row``
 and ``column``::
 
     worksheet.write_string(0, 0, 'Your text here')
     worksheet.write_string('A2', 'or here')
 
-Both row-column and A1 style notation are supported. See :ref:`cell_notation`
-for more details.
+Both row-column and A1 style notation are supported, as shown above. See
+:ref:`cell_notation` for more details.
 
 The ``cell_format`` parameter is used to apply formatting to the cell. This
 parameter is optional but when present is should be a valid
@@ -197,11 +205,17 @@ worksheet.write_number()
    :type  number:      int or float
    :type  cell_format: :ref:`Format <format>`
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+
 The ``write_number()`` method writes numeric types to the cell specified by
 ``row`` and ``column``::
 
     worksheet.write_number(0, 0, 123456)
     worksheet.write_number('A2', 2.3451)
+
+Both row-column and A1 style notation are supported, as shown above. See
+:ref:`cell_notation` for more details.
 
 The numeric types supported are ``float``, ``int``, ``long``,
 :class:`decimal.Decimal` and :class:`fractions.Fraction` or anything that can
@@ -213,9 +227,6 @@ number of digits that can be stored in Excel without losing precision is 15.
 
 .. note::
    NAN and INF are not supported and will raise a TypeError exception.
-
-Both row-column and A1 style notation are supported. See :ref:`cell_notation`
-for more details.
 
 The ``cell_format`` parameter is used to apply formatting to the cell. This
 parameter is optional but when present is should be a valid
@@ -239,6 +250,9 @@ worksheet.write_formula()
    :type  formula:     string
    :type  cell_format: :ref:`Format <format>`
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+
 The ``write_formula()`` method writes a formula or function to the cell
 specified by ``row`` and ``column``::
 
@@ -249,14 +263,14 @@ specified by ``row`` and ``column``::
     worksheet.write_formula('A5', '=AVERAGE(1, 2, 3, 4)')
     worksheet.write_formula('A6', '=DATEVALUE("1-Jan-2013")')
 
+Both row-column and A1 style notation are supported, as shown above. See
+:ref:`cell_notation` for more details.
+
 Array formulas are also supported::
 
     worksheet.write_formula('A7', '{=SUM(A1:B1*A2:B2)}')
 
 See also the ``write_array_formula()`` method below.
-
-Both row-column and A1 style notation are supported. See :ref:`cell_notation`
-for more details.
 
 The ``cell_format`` parameter is used to apply formatting to the cell. This
 parameter is optional but when present is should be a valid
@@ -313,6 +327,9 @@ worksheet.write_array_formula()
    :type  formula:     string
    :type  cell_format: :ref:`Format <format>`
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+
 The ``write_array_formula()`` method writes an array formula to a cell range. In
 Excel an array formula is a formula that performs a calculation on a set of
 values. It can return a single value or a range of values.
@@ -323,8 +340,11 @@ An array formula is indicated by a pair of braces around the formula:
 For array formulas that return a range of values you must specify the range
 that the return values will be written to::
 
-    worksheet.write_array_formula('A1:A3',    '{=TREND(C1:C3,B1:B3)}')
     worksheet.write_array_formula(0, 0, 2, 0, '{=TREND(C1:C3,B1:B3)}')
+    worksheet.write_array_formula('A1:A3',    '{=TREND(C1:C3,B1:B3)}')
+
+Both row-column and A1 style notation are supported, as shown above. See
+:ref:`cell_notation` for more details.
 
 If the array formula returns a single value then the ``first_`` and ``last_``
 parameters should be the same::
@@ -337,9 +357,6 @@ It this case however it is easier to just use the ``write_formula()`` or
     # Same as above but more concise.
     worksheet.write('A1', '{=SUM(B1:C1*B2:C2)}')
     worksheet.write_formula('A1', '{=SUM(B1:C1*B2:C2)}')
-
-As shown above, both row-column and A1 style notation are supported. See
-:ref:`cell_notation` for more details.
 
 The ``cell_format`` parameter is used to apply formatting to the cell. This
 parameter is optional but when present is should be a valid
@@ -369,9 +386,16 @@ worksheet.write_blank()
    :type  col:         int
    :type  cell_format: :ref:`Format <format>`
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+
 Write a blank cell specified by ``row`` and ``column``::
 
-    worksheet.write_blank(0, 0, None, format)
+    worksheet.write_blank(0, 0, None, cell_format)
+    worksheet.write_blank('A2', None, cell_format)
+
+Both row-column and A1 style notation are supported, as shown above. See
+:ref:`cell_notation` for more details.
 
 This method is used to add formatting to a cell which doesn't contain a string
 or number value.
@@ -383,14 +407,12 @@ but ignores "Empty" cells.
 
 As such, if you write an empty cell without formatting it is ignored::
 
-    worksheet.write('A1', None, format)  # write_blank()
-    worksheet.write('A2', None)          # Ignored
+    worksheet.write('A1', None, cell_format)  # write_blank()
+    worksheet.write('A2', None)               # Ignored
 
 This seemingly uninteresting fact means that you can write arrays of data
 without special treatment for ``None`` or empty string values.
 
-As shown above, both row-column and A1 style notation are supported. See
-:ref:`cell_notation` for more details.
 
 worksheet.write_boolean()
 -------------------------
@@ -408,14 +430,17 @@ worksheet.write_boolean()
    :type  boolean:     bool
    :type  cell_format: :ref:`Format <format>`
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+
 The ``write_boolean()`` method writes a boolean value to the cell specified by
 ``row`` and ``column``::
 
     worksheet.write_boolean(0, 0, True)
     worksheet.write_boolean('A2', False)
 
-Both row-column and A1 style notation are supported. See :ref:`cell_notation`
-for more details.
+Both row-column and A1 style notation are supported, as shown above. See
+:ref:`cell_notation` for more details.
 
 The ``cell_format`` parameter is used to apply formatting to the cell. This
 parameter is optional but when present is should be a valid
@@ -439,10 +464,17 @@ worksheet.write_datetime()
    :type  datetime:    :mod:`datetime`
    :type  cell_format: :ref:`Format <format>`
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+
 The ``write_datetime()`` method can be used to write a date or time to the cell
 specified by ``row`` and ``column``::
 
     worksheet.write_datetime(0, 0, datetime, date_format)
+    worksheet.write_datetime('A2', datetime, date_format)
+
+Both row-column and A1 style notation are supported, as shown above. See
+:ref:`cell_notation` for more details.
 
 The datetime should be a :class:`datetime.datetime`, :class:`datetime.date`
 :class:`datetime.time` or :class:`datetime.timedelta` object. The
@@ -465,7 +497,8 @@ otherwise it will appear as a number::
 If required, a default date format string can be set using the :func:`Workbook`
 constructor ``default_date_format`` option.
 
-See :ref:`working_with_dates_and_time` for more details.
+See :ref:`working_with_dates_and_time` for more details and also
+:ref:`Timezone Handling in XlsxWriter <timezone_handling>`.
 
 
 worksheet.write_url()
@@ -478,7 +511,7 @@ worksheet.write_url()
    :param row:         The cell row (zero indexed).
    :param col:         The cell column (zero indexed).
    :param url:         Hyperlink url.
-   :param cell_format: Optional Format object. Defaults to blue underline.
+   :param cell_format: Optional Format object. Defaults to the Excel hyperlink style.
    :param string:      An optional display string for the hyperlink.
    :param tip:         An optional tooltip.
    :type  row:         int
@@ -488,69 +521,83 @@ worksheet.write_url()
    :type  tip:         string
    :type  cell_format: :ref:`Format <format>`
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+   :returns: -2: String longer than 32k characters.
+   :returns: -3: Url longer than Excel limit of 255 characters.
+   :returns: -4: Exceeds Excel limit of 65,530 urls per worksheet.
+
 The ``write_url()`` method is used to write a hyperlink in a worksheet cell.
 The url is comprised of two elements: the displayed string and the
 non-displayed link. The displayed string is the same as the link unless an
-alternative string is specified.
+alternative string is specified::
 
-Both row-column and A1 style notation are supported. See :ref:`cell_notation`
-for more details.
+    worksheet.write_url(0, 0, 'https://www.python.org/')
+    worksheet.write_url('A2', 'https://www.python.org/')
+
+Both row-column and A1 style notation are supported, as shown above. See
+:ref:`cell_notation` for more details.
 
 The ``cell_format`` parameter is used to apply formatting to the cell. This
-parameter is optional. Since a hyperlink without a format doesn't look like a
-link the following default :ref:`Format <format>` is used::
+parameter is optional and the default Excel hyperlink style will be used if it
+isn't specified. If required you can access the default url format using the
+Workbook :func:`get_default_url_format` method::
 
-    workbook.add_format({'color': 'blue', 'underline': 1})
-
-Therefore the following are equivalent::
-
-    link_format = workbook.add_format({'color': 'blue', 'underline': 1})
-    worksheet.write_url('A1', 'ftp://www.python.org/', link_format)
-
-    # Same as:
-    worksheet.write_url('A1', 'ftp://www.python.org/')  # Default format.
+    url_format = workbook.get_default_url_format()
 
 Four web style URI's are supported: ``http://``, ``https://``, ``ftp://`` and
 ``mailto:``::
 
     worksheet.write_url('A1', 'ftp://www.python.org/')
-    worksheet.write_url('A2', 'http://www.python.org/')
-    worksheet.write_url('A3', 'https://www.python.org/')
-    worksheet.write_url('A4', 'mailto:jmcnamara@cpan.org')
+    worksheet.write_url('A2', 'https://www.python.org/')
+    worksheet.write_url('A3', 'mailto:jmcnamara@cpan.org')
 
 All of the these URI types are recognized by the :func:`write()` method, so the
 following are equivalent::
 
-    worksheet.write_url('A2', 'http://www.python.org/')
-    worksheet.write    ('A2', 'http://www.python.org/')  # Same.
+    worksheet.write_url('A2', 'https://www.python.org/')
+    worksheet.write    ('A2', 'https://www.python.org/')  # Same.
 
 You can display an alternative string using the ``string`` parameter::
 
-    worksheet.write_url('A1', 'http://www.python.org', link_format, 'Python')
+    worksheet.write_url('A1', 'https://www.python.org', string='Python home')
 
 .. Note::
 
   If you wish to have some other cell data such as a number or a formula you
   can overwrite the cell using another call to ``write_*()``::
 
-    worksheet.write_url('A1', 'http://www.python.org/', link_format)
+    worksheet.write_url('A1', 'https://www.python.org/')
 
-    # Overwrite the URL string with a formula. The cell is still a link.
-    worksheet.write_formula('A1', '=1+1', link_format)
+    # Overwrite the URL string with a formula. The cell will still be a link.
+    # Note the use of the default url format for consistency with other links.
+    url_format = workbook.get_default_url_format()
+    worksheet.write_formula('A1', '=1+1', url_format)
 
 There are two local URIs supported: ``internal:`` and ``external:``. These are
 used for hyperlinks to internal worksheet references or external workbook and
 worksheet references::
 
+    # Link to a cell on the current worksheet.
     worksheet.write_url('A1',  'internal:Sheet2!A1')
-    worksheet.write_url('A2',  'internal:Sheet2!A1')
-    worksheet.write_url('A3',  'internal:Sheet2!A1:B2')
-    worksheet.write_url('A4',  "internal:'Sales Data'!A1")
-    worksheet.write_url('A5', r'external:c:\temp\foo.xlsx')
-    worksheet.write_url('A6', r'external:c:\foo.xlsx#Sheet2!A1')
-    worksheet.write_url('A7', r'external:..\foo.xlsx')
-    worksheet.write_url('A8', r'external:..\foo.xlsx#Sheet2!A1')
-    worksheet.write_url('A9', r'external:\\NET\share\foo.xlsx')
+
+    # Link to a cell on another worksheet.
+    worksheet.write_url('A2',  'internal:Sheet2!A1:B2')
+
+    # Worksheet names with spaces should be single quoted like in Excel.
+    worksheet.write_url('A3',  "internal:'Sales Data'!A1")
+
+    # Link to another Excel workbook.
+    worksheet.write_url('A4', r'external:c:\temp\foo.xlsx')
+
+    # Link to a worksheet cell in another workbook.
+    worksheet.write_url('A5', r'external:c:\foo.xlsx#Sheet2!A1')
+
+    # Link to a worksheet in another workbook with a relative link.
+    worksheet.write_url('A7', r'external:..\foo.xlsx#Sheet2!A1')
+
+    # Link to a worksheet in another workbook with a network link.
+    worksheet.write_url('A8', r'external:\\NET\share\foo.xlsx')
 
 Worksheet references are typically of the form ``Sheet1!A1``. You can also link
 to a worksheet range using the standard Excel notation: ``Sheet1!A1:B2``.
@@ -603,8 +650,15 @@ worksheet.write_rich_string()
    :param cell_format:  Optional Format object.
    :type  row:          int
    :type  col:          int
+   :type  string_parts: list
    :type  cell_format:  :ref:`Format <format>`
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+   :returns: -2: String longer than 32k characters.
+   :returns: -3: 2 consecutive formats used.
+   :returns: -4: Empty string used.
+   :returns: -5: Insufficient parameters.
 
 The ``write_rich_string()`` method is used to write strings with multiple
 formats. For example to write the string "This is **bold** and this is
@@ -620,6 +674,14 @@ formats. For example to write the string "This is **bold** and this is
                                 italic, 'italic')
 
 .. image:: _images/rich_strings_small.png
+
+Both row-column and A1 style notation are supported. The following are
+equivalent::
+
+    worksheet.write_rich_string(0, 0, 'This is ', bold, 'bold')
+    worksheet.write_rich_string('A1', 'This is ', bold, 'bold')
+
+See :ref:`cell_notation` for more details.
 
 The basic rule is to break the string into fragments and put a
 :func:`Format <format>` object before the fragment that you want to format.
@@ -676,8 +738,14 @@ centers a rich string in the cell::
                                 ' centered',
                                 center)
 
+.. note::
+
+   Excel doesn't allow the use of two consecutive formats in a rich string or
+   an empty string fragment. For either of these conditions a warning is
+   raised and the input to ``write_rich_string()`` is ignored.
 
 See also :ref:`ex_rich_strings` and :ref:`ex_merge_rich`.
+
 
 worksheet.write_row()
 ---------------------
@@ -693,6 +761,9 @@ worksheet.write_row()
    :type  row:         int
    :type  col:         int
    :type  cell_format: :ref:`Format <format>`
+
+   :returns:  0: Success.
+   :returns: Other: Error return value of the ``write()`` method.
 
 The ``write_row()`` method can be used to write a list of data in one go. This
 is useful for converting the results of a database query into an Excel
@@ -710,6 +781,14 @@ For example::
     worksheet.write('B1', data[1])
     worksheet.write('C1', data[2])
 
+Both row-column and A1 style notation are supported. The following are
+equivalent::
+
+    worksheet.write_row(0, 0, data)
+    worksheet.write_row('A1', data)
+
+See :ref:`cell_notation` for more details.
+
 
 worksheet.write_column()
 ------------------------
@@ -725,6 +804,9 @@ worksheet.write_column()
    :type  row:         int
    :type  col:         int
    :type  cell_format: :ref:`Format <format>`
+
+   :returns:  0: Success.
+   :returns: Other: Error return value of the ``write()`` method.
 
 The ``write_column()`` method can be used to write a list of data in one go.
 This is useful for converting the results of a database query into an Excel
@@ -742,6 +824,14 @@ For example::
     worksheet.write('A2', data[1])
     worksheet.write('A3', data[2])
 
+Both row-column and A1 style notation are supported. The following are
+equivalent::
+
+    worksheet.write_column(0, 0, data)
+    worksheet.write_column('A1', data)
+
+See :ref:`cell_notation` for more details.
+
 
 worksheet.set_row()
 -------------------
@@ -755,6 +845,9 @@ worksheet.set_row()
    :param cell_format:  Optional Format object.
    :type  cell_format:  :ref:`Format <format>`
    :param dict options: Optional row parameters: hidden, level, collapsed.
+
+   :returns:  0: Success.
+   :returns: -1: Row is out of worksheet bounds.
 
 The ``set_row()`` method is used to change the default properties of a row. The
 most common use for this method is to change the height of a row::
@@ -834,11 +927,14 @@ worksheet.set_column()
    Set properties for one or more columns of cells.
 
    :param int first_col: First column (zero-indexed).
-   :param int last_col:  Last column (zero-indexed). Can be same as firstcol.
+   :param int last_col:  Last column (zero-indexed). Can be same as first_col.
    :param float width:   The width of the column(s).
    :param cell_format:   Optional Format object.
    :type  cell_format:   :ref:`Format <format>`
    :param dict options:  Optional parameters: hidden, level, collapsed.
+
+   :returns:  0: Success.
+   :returns: -1: Column is out of worksheet bounds.
 
 The ``set_column()``  method can be used to change the default properties of a
 single column or a range of columns::
@@ -953,12 +1049,24 @@ worksheet.insert_image()
    :type  image:       string
    :type  options:     dict
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+
 This method can be used to insert a image into a worksheet. The image can be in
-PNG, JPEG or BMP format::
+PNG, JPEG, BMP, WMF or EMF format (see the notes about BMP and EMF below)::
 
     worksheet.insert_image('B2', 'python.png')
 
 .. image:: _images/insert_image.png
+
+Both row-column and A1 style notation are supported. The following are
+equivalent::
+
+    worksheet.insert_image(1, 1, 'python.png')
+    worksheet.insert_image('B2', 'python.png')
+
+See :ref:`cell_notation` for more details.
+
 
 A file path can be specified with the image name::
 
@@ -970,14 +1078,14 @@ position and scale the image. The available parameters with their default
 values are::
 
     {
-        'x_offset':    0,
-        'y_offset':    0,
-        'x_scale':     1,
-        'y_scale':     1,
-        'url':         None,
-        'tip':         None,
-        'image_data':  None,
-        'positioning': None,
+        'x_offset':        0,
+        'y_offset':        0,
+        'x_scale':         1,
+        'y_scale':         1,
+        'object_position': 2,
+        'image_data':      None,
+        'url':             None,
+        'tip':             None,
     }
 
 The offset values are in pixels::
@@ -996,7 +1104,7 @@ horizontally and vertically::
 The ``url`` parameter can used to add a hyperlink/url to the image. The ``tip``
 parameter gives an option mouseover tooltip for images with hyperlinks::
 
-    worksheet.insert_image('B4', 'python.png', {'url': 'http://python.org'})
+    worksheet.insert_image('B4', 'python.png', {'url': 'https://python.org'})
 
 See also :func:`write_url` for details on supported URIs.
 
@@ -1007,7 +1115,7 @@ The ``image_data`` parameter is used to add an in-memory byte stream in
 
 This is generally used for inserting images from URLs::
 
-    url = 'http://python.org/logo.png'
+    url = 'https://python.org/logo.png'
     image_data = io.BytesIO(urllib2.urlopen(url).read())
 
     worksheet.insert_image('B5', url, {'image_data': image_data})
@@ -1017,30 +1125,35 @@ When using the ``image_data`` parameter a filename must still be passed to
 the filename is extracted from the URL string. See also
 :ref:`ex_images_bytesio`.
 
-The ``positioning`` parameter can be used to control the object positioning
-of the image::
+The ``object_position`` parameter can be used to control the object
+positioning of the image::
 
-    worksheet.insert_image('B3', 'python.png', {'positioning': 1})
+    worksheet.insert_image('B3', 'python.png', {'object_position': 1})
 
-Where ``positioning`` has the following allowable values:
+Where ``object_position`` has the following allowable values:
 
 1. Move and size with cells.
 2. Move but don't size with cells (the default).
 3. Don't move or size with cells.
+4. Same as Option 1 to "move and size with cells" except XlsxWriter applies
+   hidden cells after the image is inserted.
 
+See :ref:`object_position` for more detailed information about the positioning
+and scaling of images within a worksheet.
 
 .. Note::
-  The scaling of a image may be affected if is crosses a row that has its
-  default height changed due to a font that is larger than the default font
-  size or that has text wrapping turned on. To avoid this you should
-  explicitly set the height of the row using ``set_row()`` if it crosses an
-  inserted image.
+   * BMP images are only supported for backward compatibility. In general it
+     is best to avoid BMP images since they aren't compressed. If used, BMP
+     images must be 24 bit, true color, bitmaps.
 
-BMP images are only supported for backward compatibility. In general it is best
-to avoid BMP images since they aren't compressed. If used, BMP images must be
-24 bit, true color, bitmaps.
+   * EMF images can have very small differences in width and height when
+     compared to Excel files. Despite a lot of effort and testing it wasn't
+     possible to match exactly Excel's calculations for handling the
+     dimensions of EMF files. However, the differences are small (< 1%) and in
+     general aren't visible.
 
 See also :ref:`ex_insert_image`.
+
 
 worksheet.insert_chart()
 ------------------------
@@ -1057,6 +1170,9 @@ worksheet.insert_chart()
    :type  col:         int
    :type  options:     dict
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+
 This method can be used to insert a chart into a worksheet. A chart object is
 created via the Workbook :func:`add_chart()` method where the chart type is
 specified::
@@ -1070,7 +1186,6 @@ It is then inserted into a worksheet as an embedded chart::
 .. image:: _images/chart_simple.png
    :scale: 75 %
 
-
 .. Note::
 
    A chart can only be inserted into a worksheet once. If several similar
@@ -1079,15 +1194,25 @@ It is then inserted into a worksheet as an embedded chart::
 
 See :ref:`chart_class`, :ref:`working_with_charts` and :ref:`chart_examples`.
 
+Both row-column and A1 style notation are supported. The following are
+equivalent::
+
+    worksheet.insert_chart(4, 1, chart)
+    worksheet.insert_chart('B5', chart)
+
+See :ref:`cell_notation` for more details.
+
+
 The ``insert_chart()`` method takes optional parameters in a dictionary to
 position and scale the chart. The available parameters with their default
 values are::
 
     {
-        'x_offset': 0,
-        'y_offset': 0,
-        'x_scale':  1,
-        'y_scale':  1,
+        'x_offset':        0,
+        'y_offset':        0,
+        'x_scale':         1,
+        'y_scale':         1,
+        'object_position': 1,
     }
 
 The offset values are in pixels::
@@ -1101,12 +1226,19 @@ horizontally and vertically::
 
 These properties can also be set via the Chart :func:`set_size` method.
 
-.. Note::
-  The scaling of a chart may be affected if is crosses a row that has its
-  default height changed due to a font that is larger than the default font
-  size or that has text wrapping turned on. To avoid this you should
-  explicitly set the height of the row using ``set_row()`` if it crosses an
-  inserted chart.
+The ``object_position`` parameter can be used to control the object
+positioning of the image::
+
+    worksheet.insert_chart('B5', chart, {'object_position': 2})
+
+Where ``object_position`` has the following allowable values:
+
+1. Move and size with cells (the default).
+2. Move but don't size with cells.
+3. Don't move or size with cells.
+
+See :ref:`object_position` for more detailed information about the positioning
+and scaling of images within a worksheet.
 
 
 worksheet.insert_textbox()
@@ -1125,12 +1257,22 @@ worksheet.insert_textbox()
    :type  text:        string
    :type  options:     dict
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+
 This method can be used to insert a textbox into a worksheet::
 
     worksheet.insert_textbox('B2', 'A simple textbox with some text')
 
 .. image:: _images/textbox03.png
 
+Both row-column and A1 style notation are supported. The following are
+equivalent::
+
+    worksheet.insert_textbox(1, 1, 'Some text')
+    worksheet.insert_textbox('B2', 'Some text')
+
+See :ref:`cell_notation` for more details.
 
 The size and formatting of the textbox can be controlled via the ``options`` dict::
 
@@ -1141,6 +1283,7 @@ The size and formatting of the textbox can be controlled via the ``options`` dic
     y_scale
     x_offset
     y_offset
+    object_position
 
     # Formatting
     line
@@ -1155,13 +1298,8 @@ These options are explained in more detail in the
 
 See also :ref:`ex_textbox`.
 
-
-.. Note::
-  The scaling of a textbox may be affected if is crosses a row that has its
-  default height changed due to a font that is larger than the default font
-  size or that has text wrapping turned on. To avoid this you should
-  explicitly set the height of the row using ``set_row()`` if it crosses an
-  inserted chart.
+See :ref:`object_position` for more detailed information about the positioning
+and scaling of images within a worksheet.
 
 
 worksheet.insert_button()
@@ -1178,6 +1316,9 @@ worksheet.insert_button()
    :type  col:         int
    :type  options:     dict
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+
 The ``insert_button(``) method can be used to insert an Excel form button into a worksheet.
 
 This method is generally only useful when used in conjunction with the
@@ -1188,12 +1329,23 @@ embedded VBA project::
     workbook.add_vba_project('./vbaProject.bin')
 
     # Add a button tied to a macro in the VBA project.
-    worksheet.insert_button('B3',{'macro':   'say_hello',
-                                  'caption': 'Press Me'})
+    worksheet.insert_button('B3', {'macro':   'say_hello',
+                                   'caption': 'Press Me'})
 
 .. image:: _images/macros.png
 
 See :ref:`macros` and :ref:`ex_macros` for more details.
+
+Both row-column and A1 style notation are supported. The following are
+equivalent::
+
+    worksheet.insert_button(2, 1, {'macro':   'say_hello',
+                                   'caption': 'Press Me'})
+
+    worksheet.insert_button('B3', {'macro':   'say_hello',
+                                   'caption': 'Press Me'})
+
+See :ref:`cell_notation` for more details.
 
 The ``insert_button()`` method takes optional parameters in a dictionary to
 position and scale the chart. The available parameters with their default
@@ -1243,6 +1395,9 @@ worksheet.data_validation()
    :type  last_col:    int
    :type  options:     dict
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+   :returns: -2: Incorrect parameter or option.
 
 The ``data_validation()`` method is used to construct an Excel data validation
 or to limit the user input to a dropdown list of values::
@@ -1259,7 +1414,13 @@ or to limit the user input to a dropdown list of values::
 .. image:: _images/data_validate1.png
 
 The data validation can be applied to a single cell or a range of cells. As
-usual you can use A1 or Row/Column notation, see :ref:`cell_notation`.
+usual you can use A1 or Row/Column notation, see :ref:`cell_notation`::
+
+    worksheet.data_validation(1, 1, {'validate': 'list',
+                                     'source': ['open', 'high', 'close']})
+
+    worksheet.data_validation('B2', {'validate': 'list',
+                                     'source': ['open', 'high', 'close']})
 
 With Row/Column notation you must specify all four cells in the range:
 ``(first_row, first_col, last_row, last_col)``. If you need to refer to a
@@ -1270,12 +1431,10 @@ notation you can refer to a single cell or a range of cells::
     worksheet.data_validation('B1',       {...})
     worksheet.data_validation('C1:E5',    {...})
 
-
 The options parameter in ``data_validation()`` must be a dictionary containing
 the parameters that describe the type and style of the data validation. There
 are a lot of available options which are described in detail in a separate
 section: :ref:`working_with_data_validation`. See also :ref:`ex_data_valid`.
-
 
 
 worksheet.conditional_format()
@@ -1297,6 +1456,10 @@ worksheet.conditional_format()
    :type  last_col:    int
    :type  options:     dict
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+   :returns: -2: Incorrect parameter or option.
+
 The ``conditional_format()`` method is used to add formatting to a cell or
 range of cells based on user defined criteria::
 
@@ -1308,7 +1471,18 @@ range of cells based on user defined criteria::
 .. image:: _images/conditional_format1.png
 
 The conditional format can be applied to a single cell or a range of cells. As
-usual you can use A1 or Row/Column notation, see :ref:`cell_notation`.
+usual you can use A1 or Row/Column notation, see :ref:`cell_notation`::
+
+    worksheet.conditional_format(0, 0, 2, 1, {'type':     'cell',
+                                              'criteria': '>=',
+                                              'value':    50,
+                                              'format':   format1})
+
+    # This is equivalent to the following:
+    worksheet.conditional_format('A1:B3', {'type':     'cell',
+                                            'criteria': '>=',
+                                            'value':    50,
+                                            'format':   format1})
 
 With Row/Column notation you must specify all four cells in the range:
 ``(first_row, first_col, last_row, last_col)``. If you need to refer to a
@@ -1345,7 +1519,9 @@ worksheet.add_table()
    :type  last_col:    int
    :type  options:     dict
 
-
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+   :returns: -2: Incorrect parameter or option.
 
 The ``add_table()`` method is used to group a range of cells into an Excel
 Table::
@@ -1354,7 +1530,15 @@ Table::
 
 This method contains a lot of parameters and is described in :ref:`tables`.
 
-See also :ref:`ex_tables`.
+Both row-column and A1 style notation are supported. The following are
+equivalent::
+
+    worksheet.add_table(2, 1, 6, 5, { ... })
+    worksheet.add_table('B3:F7',    { ... })
+
+See :ref:`cell_notation` for more details.
+
+See also the examples in :ref:`ex_tables`.
 
 .. Note::
 
@@ -1373,6 +1557,9 @@ worksheet.add_sparkline()
    :param int col:      The cell column (zero indexed).
    :param dict options: Sparkline formatting options.
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+   :returns: -2: Incorrect parameter or option.
 
 Sparklines are small charts that fit in a single cell and are used to show
 trends in data.
@@ -1383,6 +1570,14 @@ The ``add_sparkline()`` worksheet method is used to add sparklines to a cell or
 a range of cells::
 
     worksheet.add_sparkline('F1', {'range': 'A1:E1'})
+
+Both row-column and A1 style notation are supported. The following are
+equivalent::
+
+    worksheet.add_sparkline(0, 5, {'range': 'A1:E1'})
+    worksheet.add_sparkline('F1', {'range': 'A1:E1'})
+
+See :ref:`cell_notation` for more details.
 
 This method contains a lot of parameters and is described in detail in
 :ref:`sparklines`.
@@ -1412,6 +1607,10 @@ worksheet.write_comment()
    :type  comment:     string
    :type  options:     dict
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+   :returns: -2: String longer than 32k characters.
+
 The ``write_comment()`` method is used to add a comment to a cell. A comment is
 indicated in Excel by a small red triangle in the upper right-hand corner of
 the cell. Moving the cursor over the red triangle will reveal the comment.
@@ -1423,8 +1622,13 @@ The following example shows how to add a comment to a cell::
 
 .. image:: _images/comments1.png
 
-As usual you can replace the ``row`` and ``col`` parameters with an ``A1`` cell
-reference. See :ref:`cell_notation` for more details.
+Both row-column and A1 style notation are supported. The following are
+equivalent::
+
+    worksheet.write_comment(0, 0, 'This is a comment')
+    worksheet.write_comment('A1', 'This is a comment')
+
+See :ref:`cell_notation` for more details.
 
 The properties of the cell comment can be modified by passing an optional
 dictionary of key/value pairs to control the format of the comment. For
@@ -1443,6 +1647,8 @@ over the format of the cell comment the following options are available::
     y_scale
     height
     color
+    font_name
+    font_size
     start_cell
     start_row
     start_col
@@ -1450,6 +1656,7 @@ over the format of the cell comment the following options are available::
     y_offset
 
 For more details see :ref:`cell_comments` and :ref:`ex_comments2` .
+
 
 worksheet.show_comments()
 -------------------------
@@ -1628,6 +1835,9 @@ worksheet.merge_range()
    :type  last_col:    int
    :type  cell_format: :ref:`Format <format>`
 
+   :returns:  0: Success.
+   :returns: -1: Row or column is out of worksheet bounds.
+   :returns: Other: Error return value of the called ``write()`` method.
 
 The ``merge_range()`` method allows cells to be merged together so that they
 act as a single area.
@@ -1638,6 +1848,14 @@ with XlsxWriter you need to apply a :ref:`Format <format>`::
     merge_format = workbook.add_format({'align': 'center'})
 
     worksheet.merge_range('B3:D4', 'Merged Cells', merge_format)
+
+Both row-column and A1 style notation are supported. The following are
+equivalent::
+
+    worksheet.merge_range(2, 1, 3, 3, 'Merged Cells', merge_format)
+    worksheet.merge_range('B3:D4',    'Merged Cells', merge_format)
+
+See :ref:`cell_notation` for more details.
 
 It is possible to apply other formatting to the merged cells as well::
 
@@ -1696,7 +1914,14 @@ so that some data is shown and some is hidden.
 To add an autofilter to a worksheet::
 
     worksheet.autofilter('A1:D11')
-    worksheet.autofilter(0, 0, 10, 3) # Same as above.
+
+Both row-column and A1 style notation are supported. The following are
+equivalent::
+
+    worksheet.autofilter(0, 0, 10, 3)
+    worksheet.autofilter('A1:D11')
+
+See :ref:`cell_notation` for more details.
 
 Filter conditions can be applied using the :func:`filter_column()` or
 :func:`filter_column_list()` methods.
@@ -1725,7 +1950,12 @@ The conditions for the filter are specified using simple expressions::
     worksheet.filter_column('B', 'x > 2000 and x < 5000')
 
 The ``col`` parameter can either be a zero indexed column number or a string
-column name.
+column name::
+
+    worksheet.filter_column(2,   'x > 2000')
+    worksheet.filter_column('C', 'x > 2000')
+
+See :ref:`cell_notation` for more details.
 
 It isn't sufficient to just specify the filter condition. You must also hide
 any rows that don't match the filter condition. See
@@ -1748,12 +1978,21 @@ multiple selected criteria::
     worksheet.filter_column_list('A', ['March', 'April', 'May'])
 
 The ``col`` parameter can either be a zero indexed column number or a string
-column name.
+column name::
+
+    worksheet.filter_column_list(2,   ['March', 'April', 'May'])
+    worksheet.filter_column_list('C', ['March', 'April', 'May'])
+
+See :ref:`cell_notation` for more details.
 
 One or more criteria can be selected::
 
     worksheet.filter_column_list('A', ['March'])
     worksheet.filter_column_list('C', [100, 110, 120, 130])
+
+To filter blanks as part of the list use `Blanks` as a list item::
+
+    worksheet.filter_column_list('A', ['March', 'April', 'May', 'Blanks'])
 
 It isn't sufficient to just specify filters. You must also hide any rows that
 don't match the filter condition. See :ref:`working_with_autofilters` for more
@@ -1798,7 +2037,6 @@ As shown above, both row-column and A1 style notation are supported. See
 ``(0, 0)``, ``'A1'``.
 
 
-
 worksheet.freeze_panes()
 ------------------------
 
@@ -1832,6 +2070,9 @@ Examples::
     worksheet.freeze_panes('B1')  # Same using A1 notation.
     worksheet.freeze_panes(1, 2)  # Freeze first row and first 2 columns.
     worksheet.freeze_panes('C2')  # Same using A1 notation.
+
+As shown above, both row-column and A1 style notation are supported. See
+:ref:`cell_notation` for more details.
 
 The parameters ``top_row`` and ``left_col`` are optional. They are used to
 specify the top-most or left-most visible row or column in the scrolling
@@ -1925,6 +2166,11 @@ right-to-left, with the A1 cell in the top right::
 This is useful when creating Arabic, Hebrew or other near or far eastern
 worksheets that use right-to-left as the default direction.
 
+.. image:: _images/right_to_left.png
+
+See also the Format :func:`set_reading_order` property to set the direction of the
+text withing cells and the :ref:`ex_right_to_left` example program.
+
 
 worksheet.hide_zero()
 ---------------------
@@ -2013,7 +2259,14 @@ dictionary in the ``options`` argument with any or all of the following keys::
 The default boolean values are shown above. Individual elements can be
 protected as follows::
 
-    worksheet.protect('abc123', { 'insert_rows': 1 })
+    worksheet.protect('abc123', {'insert_rows': True})
+
+For chartsheets the allowable options and default values are::
+
+    options = {
+        'objects':               True,
+        'content':               True,
+    }
 
 See also the :func:`set_locked` and :func:`set_hidden` format methods and
 :ref:`ex_protection`.

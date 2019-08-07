@@ -3,7 +3,7 @@
 #
 # Tests for XlsxWriter.
 #
-# Copyright (c), 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright (c), 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 from __future__ import unicode_literals
 from ..excel_comparsion_test import ExcelComparisonTest
@@ -17,16 +17,10 @@ class TestCompareXLSXFiles(ExcelComparisonTest):
     """
 
     def setUp(self):
-        self.maxDiff = None
 
-        filename = 'utf8_05.xlsx'
-
-        test_dir = 'xlsxwriter/test/comparison/'
-        self.got_filename = test_dir + '_test_' + filename
-        self.exp_filename = test_dir + 'xlsx_files/' + filename
+        self.set_filename('utf8_05.xlsx')
 
         self.ignore_files = ['xl/calcChain.xml', '[Content_Types].xml', 'xl/_rels/workbook.xml.rels']
-        self.ignore_elements = {}
 
     def test_create_file(self):
         """Test the creation of an XlsxWriter file with utf-8 strings."""

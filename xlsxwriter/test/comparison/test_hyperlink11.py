@@ -2,7 +2,7 @@
 #
 # Tests for XlsxWriter.
 #
-# Copyright (c), 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright (c), 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 from ..excel_comparsion_test import ExcelComparisonTest
@@ -16,16 +16,8 @@ class TestCompareXLSXFiles(ExcelComparisonTest):
     """
 
     def setUp(self):
-        self.maxDiff = None
 
-        filename = 'hyperlink11.xlsx'
-
-        test_dir = 'xlsxwriter/test/comparison/'
-        self.got_filename = test_dir + '_test_' + filename
-        self.exp_filename = test_dir + 'xlsx_files/' + filename
-
-        self.ignore_files = []
-        self.ignore_elements = {}
+        self.set_filename('hyperlink11.xlsx')
 
     def test_link_format_explicit(self):
         """Test the creation of a simple XlsxWriter file with hyperlinks. This example has link formatting."""
@@ -36,32 +28,6 @@ class TestCompareXLSXFiles(ExcelComparisonTest):
         url_format = workbook.add_format({'color': 'blue', 'underline': 1})
 
         worksheet.write_url('A1', 'http://www.perl.org/', url_format)
-
-        workbook.close()
-
-        self.assertExcelEqual()
-
-    def test_link_format_implicit(self):
-        """Test the creation of a simple XlsxWriter file with hyperlinks. This example has link formatting."""
-
-        workbook = Workbook(self.got_filename)
-
-        worksheet = workbook.add_worksheet()
-
-        worksheet.write_url('A1', 'http://www.perl.org/')
-
-        workbook.close()
-
-        self.assertExcelEqual()
-
-    def test_link_format_none(self):
-        """Test the creation of a simple XlsxWriter file with hyperlinks. This example has link formatting."""
-
-        workbook = Workbook(self.got_filename)
-
-        worksheet = workbook.add_worksheet()
-
-        worksheet.write_url('A1', 'http://www.perl.org/', None)
 
         workbook.close()
 

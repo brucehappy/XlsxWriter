@@ -1,3 +1,5 @@
+.. _main_examples:
+
 Examples
 ========
 
@@ -22,6 +24,8 @@ directory of the XlsxWriter distribution.
    example_merge_rich.rst
    example_images.rst
    example_images_bytesio.rst
+   example_right_to_left.rst
+   example_django_simple.rst
    example_http_server.rst
    example_http_server3.rst
    example_headers_footers.rst
@@ -44,4 +48,6 @@ directory of the XlsxWriter distribution.
    example_protection.rst
    example_hide_sheet.rst
    example_hide_row_col.rst
+   example_inheritance1.rst
+   example_inheritance2.rst
    example_macros.rst

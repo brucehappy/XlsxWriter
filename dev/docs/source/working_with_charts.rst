@@ -38,25 +38,42 @@ See also :ref:`chart_examples`.
 Chart Value and Category Axes
 -----------------------------
 
+
 When working with charts it is important to understand how Excel
 differentiates between a chart axis that is used for series categories and a
 chart axis that is used for series values.
 
-In the example above the X axis is the **category** axis and each of the values
-is evenly spaced and sequential. The Y axis is the **value** axis and points
-are displayed according to their value.
+In the majority of Excel charts the X axis is the **category** axis and each
+of the values is evenly spaced and sequential. The Y axis is the **value**
+axis and points are displayed according to their value:
+
+.. image:: _images/chart_axes01.png
 
 Excel treats these two types of axis differently and exposes different
-properties for each.
+properties for each. For example, here are the properties for a category axis:
 
-As such some of the ``XlsxWriter`` axis properties can be set for a value axis,
-some can be set for a category axis and some properties can be set for both.
+.. image:: _images/chart_axes02.png
 
-For example ``reverse`` can be set for either category or value axes while the
+Here are properties for a value axis:
+
+.. image:: _images/chart_axes03.png
+
+As such, some of the `XlsxWriter` axis properties can be set for a value
+axis, some can be set for a category axis and some properties can be set for
+both. For example ``reverse`` can be set for either category or value axes while the
 ``min`` and ``max`` properties can only be set for value axes (and Date Axes).
+The documentation calls out the type of axis to which properties apply.
+
+For a Bar chart the Category and Value axes are reversed:
+
+.. image:: _images/chart_axes04.png
+
+A Scatter chart (but not a Line chart) has 2 value axes:
+
+.. image:: _images/chart_axes05.png
 
 :ref:`date_category_axes` are a special type of category axis that give them
-some of the properties of Values axes such as ``min`` and ``max`` when used
+some of the properties of values axes such as ``min`` and ``max`` when used
 with date or time values.
 
 .. _chart_series_options:
@@ -226,8 +243,9 @@ trendline::
         'values': '=Sheet1!$A$1:$A$6',
         'trendline': {
             'type': 'polynomial',
-            'name': 'My trend name',
             'order': 2,
+            'forward': 0.5,
+            'backward': 0.5,
         },
     })
 
@@ -240,9 +258,8 @@ name::
         'values': '=Sheet1!$A$1:$A$6',
         'trendline': {
             'type': 'polynomial',
+            'name': 'My trend name',
             'order': 2,
-            'forward': 0.5,
-            'backward': 0.5,
         },
     })
 
@@ -488,7 +505,8 @@ Note: The * indicates the default position for each chart type in Excel, if
 a position isn't specified.
 
 The ``percentage`` property is used to turn on the display of data labels as a
-*Percentage* for a series. It is mainly used for pie charts::
+*Percentage* for a series. In Excel the ``percentage`` data label option is
+only available for Pie and Doughnut chart variants::
 
     chart.add_series({
         'values':      '=Sheet1!$A$1:$A$6',
@@ -706,6 +724,7 @@ The following properties can be set for ``line`` formats in a chart::
     color
     width
     dash_type
+    transparency
 
 The ``none`` property is uses to turn the ``line`` off (it is always on by
 default except in Scatter charts). This is useful if you wish to plot a series
@@ -773,6 +792,15 @@ that they appear in the Excel dialog::
     long_dash_dot_dot
 
 The default line style is ``solid``.
+
+The ``transparency`` property sets the transparency of the line color in the
+integer range 1 - 100. The color must be set for transparency to work, it
+doesn't work with an automatic/default color::
+
+    chart.add_series({
+        'values': '=Sheet1!$A$1:$A$6',
+        'line':   {'color': 'yellow', 'transparency': 50},
+    })
 
 More than one ``line`` property can be specified at a time::
 
@@ -847,9 +875,14 @@ or a limited number of named colors, see :ref:`colors`::
 
 
 The ``transparency`` property sets the transparency of the solid fill color in
-the integer range 1 - 100::
+the integer range 1 - 100. The color must be set for transparency to work, it
+doesn't work with an automatic/default color::
 
-    chart.set_chartarea({'fill': {'color': 'yellow', 'transparency': 75}})
+    chart.set_chartarea({'fill': {'color': 'yellow', 'transparency': 50}})
+
+.. image:: _images/chart_fill3.png
+   :scale: 75 %
+
 
 The ``fill`` format is generally used in conjunction with a ``border`` format
 which has the same properties as a ``line`` format::
@@ -860,6 +893,8 @@ which has the same properties as a ``line`` format::
         'border': {'color': 'black'}
     })
 
+.. image:: _images/chart_fill4.png
+   :scale: 75 %
 
 .. _chart_formatting_pattern:
 
@@ -946,7 +981,7 @@ The foreground color, ``fg_color``, is a required parameter and can be a Html
 style ``#RRGGBB`` string or a limited number of named colors, see
 :ref:`colors`.
 
-The background color, ``bg_color``, is optional and defaults to black.
+The background color, ``bg_color``, is optional and defaults to white.
 
 If a pattern fill is used on a chart object it overrides the solid fill
 properties of the object.

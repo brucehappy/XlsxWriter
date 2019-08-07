@@ -2,7 +2,7 @@
 #
 # Packager - A class for writing the Excel XLSX Worksheet file.
 #
-# Copyright 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 # Standard packages.
@@ -12,20 +12,21 @@ import tempfile
 from shutil import copy
 
 from .compatibility import StringIO
-from .compatibility import BytesIO
+from io import BytesIO
 
 # Package imports.
-from xlsxwriter.app import App
-from xlsxwriter.contenttypes import ContentTypes
-from xlsxwriter.core import Core
-from xlsxwriter.custom import Custom
-from xlsxwriter.relationships import Relationships
-from xlsxwriter.sharedstrings import SharedStrings
-from xlsxwriter.styles import Styles
-from xlsxwriter.theme import Theme
-from xlsxwriter.vml import Vml
-from xlsxwriter.table import Table
-from xlsxwriter.comments import Comments
+from .app import App
+from .contenttypes import ContentTypes
+from .core import Core
+from .custom import Custom
+from .relationships import Relationships
+from .sharedstrings import SharedStrings
+from .styles import Styles
+from .theme import Theme
+from .vml import Vml
+from .table import Table
+from .comments import Comments
+from .exceptions import EmptyChartSeries
 
 
 class Packager(object):
@@ -128,6 +129,9 @@ class Packager(object):
 
     def _create_package(self):
         # Write the xml files that make up the XLSX OPC package.
+        self._write_content_types_file()
+        self._write_root_rels_file()
+        self._write_workbook_rels_file()
         self._write_worksheet_files()
         self._write_chartsheet_files()
         self._write_workbook_file()
@@ -137,19 +141,16 @@ class Packager(object):
         self._write_comment_files()
         self._write_table_files()
         self._write_shared_strings_file()
-        self._write_app_file()
-        self._write_core_file()
-        self._write_custom_file()
-        self._write_content_types_file()
         self._write_styles_file()
+        self._write_custom_file()
         self._write_theme_file()
-        self._write_root_rels_file()
-        self._write_workbook_rels_file()
         self._write_worksheet_rels_files()
         self._write_chartsheet_rels_files()
         self._write_drawing_rels_files()
         self._add_image_files()
         self._add_vba_project()
+        self._write_core_file()
+        self._write_app_file()
 
         return self.filenames
 
@@ -180,9 +181,9 @@ class Packager(object):
             if worksheet.is_chartsheet:
                 continue
 
-            if worksheet.optimization == 1:
+            if worksheet.constant_memory:
                 worksheet._opt_reopen()
-                worksheet._write_remaining_optimization_rows()
+                worksheet._write_remaining_constant_memory_row_buffer()
 
             worksheet._set_xml_writer(self._filename('xl/worksheets/sheet'
                                                      + str(index) + '.xml'))
@@ -210,9 +211,9 @@ class Packager(object):
         for chart in self.workbook.charts:
             # Check that the chart has at least one data series.
             if not chart.series:
-                raise Exception("Chart%d must contain at least one "
-                                "data series. See chart.add_series()."
-                                % index)
+                raise EmptyChartSeries("Chart%d must contain at least one "
+                                       "data series. See chart.add_series()."
+                                       % index)
 
             chart._set_xml_writer(self._filename('xl/charts/chart'
                                                  + str(index) + '.xml'))
@@ -347,6 +348,8 @@ class Packager(object):
         content = ContentTypes()
         content._add_image_types(self.workbook.image_types)
 
+        self._get_table_count()
+
         worksheet_index = 1
         chartsheet_index = 1
         for worksheet in self.workbook.worksheets():
@@ -434,8 +437,13 @@ class Packager(object):
                                                      + str(index) + '.xml'))
                 table._set_properties(table_props)
                 table._assemble_xml_file()
-                self.table_count += 1
                 index += 1
+
+    def _get_table_count(self):
+        # Count the table files. Required for the [Content_Types] file.
+        for worksheet in self.workbook.worksheets():
+            for table_props in worksheet.tables:
+                self.table_count += 1
 
     def _write_root_rels_file(self):
         # Write the _rels/.rels xml file.
@@ -553,9 +561,11 @@ class Packager(object):
         # Write the drawing .rels files for worksheets with charts or drawings.
         index = 0
         for worksheet in self.workbook.worksheets():
+            if worksheet.drawing:
+                index += 1
+
             if not worksheet.drawing_links:
                 continue
-            index += 1
 
             # Create the drawing .rels xlsx_dir.
             rels = Relationships()
@@ -612,7 +622,7 @@ class Packager(object):
                     try:
                         os.chmod(os_filename,
                                  os.stat(os_filename).st_mode | stat.S_IWRITE)
-                    except:
+                    except OSError:
                         pass
             else:
                 # For in-memory mode we read the image into a stream.

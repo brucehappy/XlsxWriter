@@ -4,14 +4,14 @@
 # memory string suitable for serving via SimpleHTTPServer or Django or with
 # the Google App Engine.
 #
-# Copyright 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 # Note: This is a Python 2 example. For Python 3 see http_server_py3.py.
 
 import SimpleHTTPServer
 import SocketServer
-import StringIO
+import io
 
 import xlsxwriter
 
@@ -20,7 +20,7 @@ class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         # Create an in-memory output file for the new workbook.
-        output = StringIO.StringIO()
+        output = io.BytesIO()
 
         # Even though the final file will be in memory the module uses temp
         # files during assembly for efficiency. To avoid this on servers that

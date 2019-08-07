@@ -3,7 +3,7 @@
 # An example of inserting textboxes into an Excel worksheet using
 # Python and XlsxWriter.
 #
-# Copyright 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 import xlsxwriter
 
@@ -104,14 +104,6 @@ row += 10
 
 # Example
 text = 'Default alignment: top - left'
-worksheet.insert_textbox(row, col, text)
-row += 10
-
-# Example
-text = 'Alignment: top - center'
-options = {
-    'align': {'horizontal': 'center'},
-}
 worksheet.insert_textbox(row, col, text)
 row += 10
 

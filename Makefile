@@ -10,6 +10,9 @@ docs doc:
 pdf:
 	@make -C dev/docs latexpdf
 
+linkcheck:
+	@make -C dev/docs linkcheck
+
 clean:
 	@make -C dev/docs clean
 
@@ -36,28 +39,30 @@ testpythons:
 
 # Test with all stable Python 2/3 releases.
 testpythonsall:
-	@echo "Testing with Python 2.5.6:"
-	@~/.pythonbrew/pythons/Python-2.5.6/bin/py.test -q
-	@echo "Testing with Python 2.6.8:"
-	@~/.pythonbrew/pythons/Python-2.6.8/bin/py.test -q
 	@echo "Testing with Python 2.7.4:"
 	@~/.pythonbrew/pythons/Python-2.7.4/bin/py.test -q
-	@echo "Testing with Python 3.1.5:"
-	@~/.pythonbrew/pythons/Python-3.1.5/bin/py.test -q
-	@echo "Testing with Python 3.2.5:"
-	@~/.pythonbrew/pythons/Python-3.2.5/bin/py.test -q
-	@echo "Testing with Python 3.3.2:"
-	@~/.pythonbrew/pythons/Python-3.3.2/bin/py.test -q
 	@echo "Testing with Python 3.4.1:"
 	@~/.pythonbrew/pythons/Python-3.4.1/bin/py.test -q
 	@echo "Testing with Python 3.5.0:"
 	@~/.pythonbrew/pythons/Python-3.5.0/bin/py.test -q
+	@echo "Testing with Python 3.6.6:"
+	@~/.pythonbrew/pythons/Python-3.6.6/bin/py.test -q
+	@echo "Testing with Python 3.7.0:"
+	@~/.pythonbrew/pythons/Python-3.7.0/bin/py.test -q
 
-testpep8:
-	@ls -1 xlsxwriter/*.py | egrep -v "theme|compat|__init__" | xargs flake8
-	@pep8 --ignore=E501 xlsxwriter/theme.py
-	@pep8 --ignore=E501 xlsxwriter/compat_collections.py
-	@find xlsxwriter/test -name \*.py | xargs pep8 --ignore=E501
+test_codestyle testpep8:
+	@ls -1 xlsxwriter/*.py | egrep -v "theme|compat|__init__" | xargs pycodestyle
+	@pycodestyle --ignore=E501 xlsxwriter/theme.py
+	@find xlsxwriter/test -name \*.py | xargs pycodestyle --ignore=E501
+
+tags:
+	$(Q)rm -f TAGS
+	$(Q)etags xlsxwriter/*.py
+
+testwarnings:
+	@find . -name '*.py[co]' -exec rm -rf '{}' +
+	@PYTHONPATH=$PYTHONPATH:. ~/.pythonbrew/pythons/Python-3.7.0/bin/python -Walways examples/hello_world.py
+	@rm -f hello_world.xlsx
 
 spellcheck:
 	@for f in dev/docs/source/*.rst; do aspell --lang=en_US --check $$f; done
@@ -72,7 +77,9 @@ releasecheck:
 release: releasecheck
 	@git push origin master
 	@git push --tags
-	@python setup.py sdist bdist_wheel upload
-	@curl -X POST http://readthedocs.org/build/6277
+	@python setup.py sdist bdist_wheel
+	@twine upload dist/*
+	@../build_readthedocs.sh
+	@rm -rf dist
 	@rm -rf build
 	@rm -rf XlsxWriter.egg-info/

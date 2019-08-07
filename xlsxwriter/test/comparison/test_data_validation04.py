@@ -2,7 +2,7 @@
 #
 # Tests for XlsxWriter.
 #
-# Copyright (c), 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright (c), 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 from ..excel_comparsion_test import ExcelComparisonTest
@@ -16,16 +16,8 @@ class TestCompareXLSXFiles(ExcelComparisonTest):
     """
 
     def setUp(self):
-        self.maxDiff = None
 
-        filename = 'data_validation02.xlsx'
-
-        test_dir = 'xlsxwriter/test/comparison/'
-        self.got_filename = test_dir + '_test_4' + filename
-        self.exp_filename = test_dir + 'xlsx_files/' + filename
-
-        self.ignore_files = []
-        self.ignore_elements = {}
+        self.set_filename('data_validation02.xlsx')
 
     def test_create_file(self):
         """Test the creation of an  XlsxWriter file data validation."""
@@ -42,7 +34,7 @@ class TestCompareXLSXFiles(ExcelComparisonTest):
                    }
         )
 
-        # The following should be rejected bacuase the input title is too long.
+        # The following should be rejected becuase the input title is too long.
         input_title = 'This is the longest input title12'
         input_message = 'This is the longest input message ' + ('a' * 221)
         values = [

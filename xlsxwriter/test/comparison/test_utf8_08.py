@@ -3,7 +3,7 @@
 #
 # Tests for XlsxWriter.
 #
-# Copyright (c), 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright (c), 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 from __future__ import unicode_literals
 from ..excel_comparsion_test import ExcelComparisonTest
@@ -17,13 +17,8 @@ class TestCompareXLSXFiles(ExcelComparisonTest):
     """
 
     def setUp(self):
-        self.maxDiff = None
 
-        filename = 'utf8_08.xlsx'
-
-        test_dir = 'xlsxwriter/test/comparison/'
-        self.got_filename = test_dir + '_test_' + filename
-        self.exp_filename = test_dir + 'xlsx_files/' + filename
+        self.set_filename('utf8_08.xlsx')
 
         self.ignore_files = ['xl/printerSettings/printerSettings1.bin',
                              'xl/worksheets/_rels/sheet1.xml.rels']

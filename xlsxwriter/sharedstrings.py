@@ -2,11 +2,12 @@
 #
 # SharedStrings - A class for writing the Excel XLSX sharedStrings file.
 #
-# Copyright 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 # Standard packages.
 import re
+import sys
 
 # Package imports.
 from . import xmlwriter
@@ -91,7 +92,7 @@ class SharedStrings(xmlwriter.XMLwriter):
         string = escape_string(string)
 
         # Add attribute to preserve leading or trailing whitespace.
-        if re.search('^\s', string) or re.search('\s$', string):
+        if re.search(r'^\s', string) or re.search(r'\s$', string):
             attributes.append(('xml:space', 'preserve'))
 
         # Write any rich strings without further tags.

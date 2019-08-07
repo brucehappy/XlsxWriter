@@ -8,7 +8,7 @@
 # warning messages. It also allows you to restrict input to values in
 # a drop down list.
 #
-# Copyright 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 from datetime import date, time
 import xlsxwriter
@@ -120,7 +120,7 @@ worksheet.data_validation('B15', {'validate': 'list',
 
 # Example 8. Limiting input to a date in a fixed range.
 #
-txt = 'Enter a date between 1/1/2008 and 12/12/2008'
+txt = 'Enter a date between 1/1/2013 and 12/12/2013'
 
 worksheet.write('A17', txt)
 worksheet.data_validation('B17', {'validate': 'date',

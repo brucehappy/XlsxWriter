@@ -2,7 +2,7 @@
 #
 # Drawing - A class for writing the Excel XLSX Drawing file.
 #
-# Copyright 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 from . import xmlwriter
@@ -131,14 +131,11 @@ class Drawing(xmlwriter.XMLwriter):
 
         attributes = []
 
-        # Add attribute for images.
-        if drawing['anchor_type'] == 2:
-            if drawing['anchor'] == 3:
-                attributes.append(('editAs', 'absolute'))
-            elif drawing['anchor'] == 1:
-                pass
-            else:
-                attributes.append(('editAs', 'oneCell'))
+        # Add attribute for positioning.
+        if drawing['anchor'] == 2:
+            attributes.append(('editAs', 'oneCell'))
+        elif drawing['anchor'] == 3:
+            attributes.append(('editAs', 'absolute'))
 
         # Add editAs attribute for shapes.
         if shape and shape.edit_as:
@@ -313,8 +310,11 @@ class Drawing(xmlwriter.XMLwriter):
 
         self._xml_end_tag('xdr:nvGraphicFramePr')
 
-    def _write_c_nv_pr(self, index, name, options={}):
+    def _write_c_nv_pr(self, index, name, options=None):
         # Write the <xdr:cNvPr> element.
+        if options is None:
+            options = {}
+
         descr = options.get('description', None)
         url = options.get('url', None)
         tip = options.get('tip', None)

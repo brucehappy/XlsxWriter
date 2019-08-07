@@ -8,8 +8,8 @@ library. It can read, filter and re-arrange small and large data sets and
 output them in a range of formats including Excel.
 
 Pandas writes Excel files using the `Xlwt
-<https://pypi.python.org/pypi/xlwt>`_ module for xls files and the `Openpyxl
-<https://pypi.python.org/pypi/openpyxl>`_ or XlsxWriter modules for xlsx
+<https://pypi.org/project/xlwt/>`_ module for xls files and the `Openpyxl
+<https://pypi.org/project/openpyxl/>`_ or XlsxWriter modules for xlsx
 files.
 
 
@@ -126,7 +126,7 @@ Formatting of the Dataframe output
 
 XlsxWriter and Pandas provide very little support for formatting the output
 data from a dataframe apart from default formatting such as the header and
-index cells and any cells that contain dates of datetimes. In addition it
+index cells and any cells that contain dates or datetimes. In addition it
 isn't possible to format any cells that already have a default format applied.
 
 If you require very controlled formatting of the dataframe output then you
@@ -165,6 +165,39 @@ It is possible to format any other, non date/datetime column data using
 Note: This feature requires Pandas >= 0.16.
 
 See the full example at :ref:`ex_pandas_column_formats`.
+
+
+Formatting of the Dataframe headers
+-----------------------------------
+
+Pandas writes the dataframe header with a default cell format. Since it is a
+cell format it cannot be overridden using :func:`set_row()`. If you wish to
+use your own format for the headings then the best approach is to turn off the
+automatic header from Pandas and write your own. For example::
+
+    # Turn off the default header and skip one row to allow us to insert a
+    # user defined header.
+    df.to_excel(writer, sheet_name='Sheet1', startrow=1, header=False)
+
+    # Get the xlsxwriter workbook and worksheet objects.
+    workbook  = writer.book
+    worksheet = writer.sheets['Sheet1']
+
+    # Add a header format.
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'valign': 'top',
+        'fg_color': '#D7E4BC',
+        'border': 1})
+
+    # Write the column headers with the defined format.
+    for col_num, value in enumerate(df.columns.values):
+        worksheet.write(0, col_num + 1, value, header_format)
+
+.. image:: _images/pandas_header_format.png
+
+See the full example at :ref:`ex_pandas_header_format`.
 
 
 Handling multiple Pandas Dataframes
@@ -214,28 +247,26 @@ Saving the Dataframe output to a string
 ---------------------------------------
 
 It is also possible to write the Pandas XlsxWriter DataFrame output to a
-string or byte array::
+byte array::
 
     import pandas as pd
-    import StringIO
+    import io
 
     # Create a Pandas dataframe from the data.
     df = pd.DataFrame({'Data': [10, 20, 30, 20, 15, 30, 45]})
 
-    # Note, Python 2 example. For Python 3 use: output = io.BytesIO().
-    output = StringIO.StringIO()
+    output = io.BytesIO()
 
-    # Use the StringIO object as the filehandle.
+    # Use the BytesIO object as the filehandle.
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
 
-    # Write the data frame to the StringIO object.
-    pd.DataFrame().to_excel(writer, sheet_name='Sheet1')
+    # Write the data frame to the BytesIO object.
+    df.to_excel(writer, sheet_name='Sheet1')
 
     writer.save()
     xlsx_data = output.getvalue()
 
     # Do something with the data...
-
 
 Note: This feature requires Pandas >= 0.17.
 
@@ -252,7 +283,7 @@ Here are some additional resources in relation to Pandas, Excel and XlsxWriter.
 
 * A more detailed tutorial on `Using Pandas and XlsxWriter to create Excel
   charts
-  <http://pandas-xlsxwriter-charts.readthedocs.org/en/latest/index.html>`_.
+  <https://pandas-xlsxwriter-charts.readthedocs.io/>`_.
 
 * The series of articles on the "Practical Business Python" website about
-  `Using Pandas and Excel <http://pbpython.com/tag/excel.html>`_.
+  `Using Pandas and Excel <https://pbpython.com/tag/excel.html>`_.

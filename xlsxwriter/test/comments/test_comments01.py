@@ -2,7 +2,7 @@
 #
 # Tests for XlsxWriter.
 #
-# Copyright (c), 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright (c), 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 
 import unittest
@@ -24,7 +24,7 @@ class TestAssembleComments(unittest.TestCase):
         comments = Comments()
         comments._set_filehandle(fh)
 
-        comments._assemble_xml_file([[1, 1, 'Some text', 'John', None, 81, [2, 0, 4, 4, 143, 10, 128, 74]]])
+        comments._assemble_xml_file([[1, 1, 'Some text', 'John', None, 81, 'Tahoma', 8, 2, [2, 0, 4, 4, 143, 10, 128, 74]]])
 
         exp = _xml_to_list("""
                 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>

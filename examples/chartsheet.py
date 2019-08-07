@@ -3,7 +3,7 @@
 # An example of creating an Excel chart in a chartsheet with Python
 # and XlsxWriter.
 #
-# Copyright 2013-2016, John McNamara, jmcnamara@cpan.org
+# Copyright 2013-2019, John McNamara, jmcnamara@cpan.org
 #
 import xlsxwriter
 
@@ -59,5 +59,8 @@ chart1.set_style(11)
 
 # Add the chart to the chartsheet.
 chartsheet.set_chart(chart1)
+
+# Display the chartsheet as the active sheet when the workbook is opened.
+chartsheet.activate();
 
 workbook.close()
