@@ -4144,7 +4144,7 @@ class Worksheet(xmlwriter.XMLwriter):
         return result
 
     def _shared_string_enabled(self, col):
-        return self.optimization == 0 or col in self.shared_string_cols
+        return not self.constant_memory or col in self.shared_string_cols
 
     def _encode_password(self, plaintext):
         # Encode the worksheet protection "password" as a simple hash.
