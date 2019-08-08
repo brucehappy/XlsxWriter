@@ -23,16 +23,14 @@ class TestAssembleSharedStrings(unittest.TestCase):
         string_table = SharedStringTable()
 
         # Add some strings with leading/trailing whitespace.
-        index = string_table._get_shared_string_index('abcdefg')
+        index = string_table.get_index('abcdefg')
         self.assertEqual(index, 0)
 
-        index = string_table._get_shared_string_index('   abcdefg')
+        index = string_table.get_index('   abcdefg')
         self.assertEqual(index, 1)
 
-        index = string_table._get_shared_string_index('abcdefg   ')
+        index = string_table.get_index('abcdefg   ')
         self.assertEqual(index, 2)
-
-        string_table._sort_string_data()
 
         fh = StringIO()
         sharedstrings = SharedStrings()

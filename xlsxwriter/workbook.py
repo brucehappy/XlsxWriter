@@ -21,7 +21,7 @@ from .compatibility import int_types, num_types, str_types, force_unicode
 from . import xmlwriter
 from .worksheet import Worksheet
 from .chartsheet import Chartsheet
-from .sharedstrings import SharedStringTable
+from .sharedstrings import AbstractSharedStringTable, SharedStringTable
 from .format import Format
 from .packager import Packager
 from .utility import xl_cell_to_rowcol
@@ -117,7 +117,8 @@ class Workbook(xmlwriter.XMLwriter):
         self.window_width = 16095
         self.window_height = 9660
         self.tab_ratio = 600
-        self.str_table = SharedStringTable()
+        str_table = options.get('shared_string_table', None)
+        self.str_table = str_table if isinstance(str_table, AbstractSharedStringTable) else SharedStringTable()
         self.vba_project = None
         self.vba_is_stream = False
         self.vba_codename = None
@@ -635,9 +636,6 @@ class Workbook(xmlwriter.XMLwriter):
             for sheet in self.worksheets():
                 if sheet.vba_codename is None:
                     sheet.set_vba_name()
-
-        # Convert the SST strings data structure.
-        self._prepare_sst_string_data()
 
         # Prepare the worksheet VML elements such as comments and buttons.
         self._prepare_vml()
@@ -1606,10 +1604,6 @@ class Workbook(xmlwriter.XMLwriter):
             return None, None
 
         return sheetname, [row_start, col_start, row_end, col_end]
-
-    def _prepare_sst_string_data(self):
-        # Convert the SST string data from a dict to a list.
-        self.str_table._sort_string_data()
 
     ###########################################################################
     #

@@ -521,7 +521,7 @@ class Worksheet(xmlwriter.XMLwriter):
 
         # Write a shared string or an in-line string in constant_memory mode.
         if self._shared_string_enabled(col):
-            string_index = self.str_table._get_shared_string_index(string)
+            string_index = self.str_table.get_index(string)
         else:
             string_index = string
 
@@ -1067,7 +1067,7 @@ class Worksheet(xmlwriter.XMLwriter):
 
         # Write a shared string or an in-line string in constant_memory mode.
         if self._shared_string_enabled(col):
-            string_index = self.str_table._get_shared_string_index(string)
+            string_index = self.str_table.get_index(string)
         else:
             string_index = string
 
@@ -4880,7 +4880,7 @@ class Worksheet(xmlwriter.XMLwriter):
                     elif type_cell_name == 'String':
                         # Return a string from it's shared string index.
                         index = cell.string
-                        string = self.str_table._get_shared_string(index)
+                        string = self.str_table.get_string(index)
 
                         data.append(string)
 

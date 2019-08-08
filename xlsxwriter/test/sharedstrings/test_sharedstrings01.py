@@ -23,28 +23,26 @@ class TestAssembleSharedStrings(unittest.TestCase):
         string_table = SharedStringTable()
 
         # Add some strings and check the returned indices.
-        index = string_table._get_shared_string_index('neptune')
+        index = string_table.get_index('neptune')
         self.assertEqual(index, 0)
 
-        index = string_table._get_shared_string_index('neptune')
+        index = string_table.get_index('neptune')
         self.assertEqual(index, 0)
 
-        index = string_table._get_shared_string_index('neptune')
+        index = string_table.get_index('neptune')
         self.assertEqual(index, 0)
 
-        index = string_table._get_shared_string_index('mars')
+        index = string_table.get_index('mars')
         self.assertEqual(index, 1)
 
-        index = string_table._get_shared_string_index('venus')
+        index = string_table.get_index('venus')
         self.assertEqual(index, 2)
 
-        index = string_table._get_shared_string_index('mars')
+        index = string_table.get_index('mars')
         self.assertEqual(index, 1)
 
-        index = string_table._get_shared_string_index('venus')
+        index = string_table.get_index('venus')
         self.assertEqual(index, 2)
-
-        string_table._sort_string_data()
 
         fh = StringIO()
         sharedstrings = SharedStrings()

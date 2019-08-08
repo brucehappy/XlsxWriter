@@ -7,11 +7,12 @@
 
 # Standard packages.
 import re
-import sys
+import abc
 
 # Package imports.
 from . import xmlwriter
 from .utility import escape_string
+from bidict import OrderedBidict
 
 
 class SharedStrings(xmlwriter.XMLwriter):
@@ -81,7 +82,7 @@ class SharedStrings(xmlwriter.XMLwriter):
     def _write_sst_strings(self):
         # Write the sst string elements.
 
-        for string in (self.string_table._get_strings()):
+        for string in self.string_table.get_strings():
             self._write_si(string)
 
     def _write_si(self, string):
@@ -103,43 +104,61 @@ class SharedStrings(xmlwriter.XMLwriter):
 
 
 # A metadata class to store Excel strings between worksheets.
+class AbstractSharedStringTable:
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractproperty
+    def unique_count(self):
+        pass
+
+    @abc.abstractproperty
+    def count(self):
+        pass
+
+    @abc.abstractmethod
+    def get_index(self, string):
+        pass
+
+    @abc.abstractmethod
+    def get_string(self, index):
+        pass
+
+    @abc.abstractmethod
+    def get_strings(self):
+        pass
+
+
 class SharedStringTable(object):
-    """
-    A class to track Excel shared strings between worksheets.
-
-    """
-
+    """ A class to track Excel shared strings between worksheets. """
     def __init__(self):
         self.count = 0
-        self.unique_count = 0
-        self.string_table = {}
-        self.string_array = []
+        self._strings = OrderedBidict()
 
-    def _get_shared_string_index(self, string):
+    @property
+    def unique_count(self):
+        return len(self._strings)
+
+    def get_index(self, string):
         """" Get the index of the string in the Shared String table. """
-        if string not in self.string_table:
+        if string not in self._strings:
             # String isn't already stored in the table so add it.
             index = self.unique_count
-            self.string_table[string] = index
+            self._strings[string] = index
             self.count += 1
-            self.unique_count += 1
             return index
         else:
             # String exists in the table.
-            index = self.string_table[string]
+            index = self._strings[string]
             self.count += 1
             return index
 
-    def _get_shared_string(self, index):
+    def get_string(self, index):
         """" Get a shared string from the index. """
-        return self.string_array[index]
+        return self._strings.inverse[index]
 
-    def _sort_string_data(self):
-        """" Sort the shared string data and convert from dict to list. """
-        self.string_array = sorted(self.string_table,
-                                   key=self.string_table.__getitem__)
-        self.string_table = {}
+    def get_strings(self):
+        """" Return the sorted string iterator. """
+        return self._strings.iterkeys()
 
-    def _get_strings(self):
-        """" Return the sorted string list. """
-        return self.string_array
+
+AbstractSharedStringTable.register(SharedStringTable)
