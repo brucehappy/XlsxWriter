@@ -108,6 +108,10 @@ class AbstractSharedStringTable:
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractproperty
+    def supports_constant_memory(self):
+        pass
+
+    @abc.abstractproperty
     def unique_count(self):
         pass
 
@@ -133,6 +137,7 @@ class SharedStringTable(object):
     def __init__(self):
         self.count = 0
         self._strings = OrderedBidict()
+        self.supports_constant_memory = False
 
     @property
     def unique_count(self):
