@@ -174,7 +174,7 @@ class Worksheet(xmlwriter.XMLwriter):
         self.palette = None
         self.constant_memory = False
         self.constant_memory_row_buffer = 0
-        self.shared_string_cols = set()
+        self.constant_memory_shared_string_cols = set()
         self.tmpdir = None
         self.is_chartsheet = False
 
@@ -3728,7 +3728,7 @@ class Worksheet(xmlwriter.XMLwriter):
         self.worksheet_meta = init_data['worksheet_meta']
         self.constant_memory = init_data['constant_memory']
         self.constant_memory_row_buffer = init_data['constant_memory_row_buffer']
-        self.shared_string_cols = self._get_shared_string_cols(init_data.get('constant_memory_shared_string_cols', []))
+        self.constant_memory_shared_string_cols = self._get_constant_memory_shared_string_cols(init_data.get('constant_memory_shared_string_cols', []))
         self.tmpdir = init_data['tmpdir']
         self.date_1904 = init_data['date_1904']
         self.strings_to_numbers = init_data['strings_to_numbers']
@@ -4103,7 +4103,7 @@ class Worksheet(xmlwriter.XMLwriter):
 
         return [operator, token]
 
-    def _get_shared_string_cols(self, obj):
+    def _get_constant_memory_shared_string_cols(self, obj):
         # Accept the following formats:
         # single column: 0 or 'A'
         # multiple columns: [0,3,4] or ['A','D','E']
@@ -4116,7 +4116,7 @@ class Worksheet(xmlwriter.XMLwriter):
         elif isinstance(obj, num_types):
             col_list = [obj]
         else:
-            return
+            col_list = []
         result = set()
         for cur_col in col_list:
             try:
@@ -4144,7 +4144,7 @@ class Worksheet(xmlwriter.XMLwriter):
         return result
 
     def _shared_string_enabled(self, col):
-        return not self.constant_memory or col in self.shared_string_cols
+        return not self.constant_memory or self.str_table.supports_constant_memory or col in self.constant_memory_shared_string_cols
 
     def _encode_password(self, plaintext):
         # Encode the worksheet protection "password" as a simple hash.
