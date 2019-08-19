@@ -12,7 +12,6 @@ import abc
 # Package imports.
 from . import xmlwriter
 from .utility import escape_string
-from bidict import OrderedBidict
 
 
 class SharedStrings(xmlwriter.XMLwriter):
@@ -136,6 +135,7 @@ class SharedStringTable(object):
     """ A class to track Excel shared strings between worksheets. """
     def __init__(self):
         self.count = 0
+        from bidict import OrderedBidict
         self._strings = OrderedBidict()
         self.supports_constant_memory = False
 
